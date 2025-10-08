@@ -11,9 +11,12 @@ const httpServer = createServer(app);
 app.use(cors());
 
 // Create Socket.IO server with CORS
+// Remove trailing slash from CLIENT_URL to avoid CORS issues
+const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
+
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: clientUrl,
     methods: ['GET', 'POST']
   }
 });
