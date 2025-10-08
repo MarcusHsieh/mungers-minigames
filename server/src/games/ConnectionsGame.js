@@ -1,0 +1,215 @@
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+export class ConnectionsGame {
+  constructor(io, lobby) {
+    this.io = io;
+    this.lobby = lobby;
+    this.lobbyCode = lobby.code;
+
+    // Game settings
+    this.isMegaMode = lobby.settings.megaMode || false;
+    this.puzzleCount = lobby.settings.puzzleCount || (this.isMegaMode ? 2 : 1);
+
+    // Game state
+    this.words = [];
+    this.categories = [];
+    this.solvedCategories = [];
+    this.mistakeCount = 0;
+    this.maxMistakes = 4;
+    this.playerCursors = new Map(); // playerId -> { x, y }
+    this.playerSelections = new Map(); // playerId -> Set of words
+    this.phase = 'playing'; // playing, won, lost
+  }
+
+  start() {
+    console.log(`Starting Connections game in lobby ${this.lobbyCode}`);
+
+    // Load and merge puzzles
+    this.loadPuzzles();
+
+    // Send initial game state
+    this.io.to(this.lobbyCode).emit('connections_start', {
+      words: this.words,
+      maxMistakes: this.maxMistakes,
+      isMegaMode: this.isMegaMode
+    });
+  }
+
+  loadPuzzles() {
+    // Load from archive
+    const archivePath = join(__dirname, '../data/connections-archive.json');
+    const archiveData = readFileSync(archivePath, 'utf-8');
+    const allPuzzles = JSON.parse(archiveData);
+
+    // Select random puzzles
+    const selectedPuzzles = [];
+    const shuffled = [...allPuzzles].sort(() => Math.random() - 0.5);
+
+    for (let i = 0; i < this.puzzleCount && i < shuffled.length; i++) {
+      selectedPuzzles.push(shuffled[i]);
+    }
+
+    // Merge puzzles
+    if (this.isMegaMode && selectedPuzzles.length > 1) {
+      this.mergePuzzles(selectedPuzzles);
+    } else {
+      this.categories = selectedPuzzles[0].categories;
+      this.words = this.categories.flatMap(cat => cat.words);
+    }
+
+    // Shuffle words
+    this.words = this.words.sort(() => Math.random() - 0.5);
+  }
+
+  mergePuzzles(puzzles) {
+    const allWords = new Set();
+    const mergedCategories = [];
+
+    for (const puzzle of puzzles) {
+      for (const category of puzzle.categories) {
+        // Check for duplicate words
+        const categoryWords = category.words.filter(word => {
+          if (allWords.has(word)) {
+            console.warn(`Duplicate word detected: ${word}. Skipping category.`);
+            return false;
+          }
+          return true;
+        });
+
+        // Only add category if all words are unique
+        if (categoryWords.length === category.words.length) {
+          categoryWords.forEach(w => allWords.add(w));
+          mergedCategories.push({ ...category, words: categoryWords });
+        }
+      }
+    }
+
+    this.categories = mergedCategories;
+    this.words = Array.from(allWords);
+
+    console.log(`Mega mode: Merged ${puzzles.length} puzzles into ${this.categories.length} categories`);
+  }
+
+  updateCursor(playerId, data) {
+    const { x, y } = data;
+    this.playerCursors.set(playerId, { x, y });
+
+    const player = this.lobby.players.get(playerId);
+
+    // Broadcast to all other players in the room
+    this.io.to(this.lobbyCode).emit('cursor_update', {
+      playerId,
+      playerName: player?.name || 'Unknown',
+      x,
+      y
+    });
+  }
+
+  selectWord(playerId, word) {
+    if (!this.playerSelections.has(playerId)) {
+      this.playerSelections.set(playerId, new Set());
+    }
+
+    const selections = this.playerSelections.get(playerId);
+
+    // Toggle selection
+    if (selections.has(word)) {
+      selections.delete(word);
+    } else {
+      // Limit to 4 selections
+      if (selections.size < 4) {
+        selections.add(word);
+      } else {
+        return; // Can't select more than 4
+      }
+    }
+
+    // Broadcast selection update
+    this.io.to(this.lobbyCode).emit('selection_update', {
+      playerId,
+      selections: Array.from(selections)
+    });
+  }
+
+  submitGroup(playerId, words) {
+    if (this.phase !== 'playing' || words.length !== 4) {
+      return;
+    }
+
+    const player = this.lobby.players.get(playerId);
+    const wordSet = new Set(words);
+
+    // Check if this matches any category
+    const matchedCategory = this.categories.find(cat => {
+      if (this.solvedCategories.includes(cat.name)) {
+        return false;
+      }
+      return cat.words.every(w => wordSet.has(w));
+    });
+
+    if (matchedCategory) {
+      // Correct!
+      this.solvedCategories.push(matchedCategory.name);
+
+      // Clear selections for this player
+      this.playerSelections.set(playerId, new Set());
+
+      this.io.to(this.lobbyCode).emit('category_solved', {
+        category: matchedCategory,
+        solvedBy: player?.name || 'Unknown',
+        playerId
+      });
+
+      // Check if all categories solved
+      if (this.solvedCategories.length === this.categories.length) {
+        this.endGame(true);
+      }
+    } else {
+      // Incorrect
+      this.mistakeCount++;
+
+      this.io.to(this.lobbyCode).emit('mistake_made', {
+        playerId,
+        playerName: player?.name || 'Unknown',
+        mistakeCount: this.mistakeCount,
+        maxMistakes: this.maxMistakes
+      });
+
+      // Check if too many mistakes
+      if (this.mistakeCount >= this.maxMistakes) {
+        this.endGame(false);
+      }
+    }
+  }
+
+  endGame(won) {
+    this.phase = won ? 'won' : 'lost';
+
+    this.io.to(this.lobbyCode).emit('connections_end', {
+      won,
+      categories: this.categories,
+      solvedCategories: this.solvedCategories
+    });
+
+    // Don't reset lobby for Connections - allow players to stay
+    // Just reset game state for a new round if desired
+  }
+
+  // Allow restarting the game with a new puzzle
+  restart() {
+    this.words = [];
+    this.categories = [];
+    this.solvedCategories = [];
+    this.mistakeCount = 0;
+    this.playerCursors.clear();
+    this.playerSelections.clear();
+    this.phase = 'playing';
+
+    this.start();
+  }
+}

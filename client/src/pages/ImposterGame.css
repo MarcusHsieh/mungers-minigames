@@ -1,0 +1,247 @@
+.imposter-game {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.role-badge {
+  background: rgba(138, 139, 223, 0.2);
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: 20px;
+  font-weight: 600;
+  border: 1px solid #8A8BDF;
+}
+
+.role-badge[data-role="imposter"] {
+  background: rgba(220, 38, 38, 0.3);
+  border: 2px solid #dc2626;
+}
+
+.role-badge[data-role="innocent"] {
+  background: rgba(34, 197, 94, 0.3);
+  border: 2px solid #22c55e;
+}
+
+.round-info {
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+.word-display {
+  background: rgba(138, 139, 223, 0.2);
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 18px;
+  border: 1px solid #8A8BDF;
+}
+
+.word-display strong {
+  display: block;
+  font-size: 32px;
+  margin-top: 8px;
+  letter-spacing: 2px;
+}
+
+.timer {
+  background: rgba(138, 139, 223, 0.3);
+  border: 2px solid #8A8BDF;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 auto 16px;
+  color: #E7CFCD;
+}
+
+.turn-phase,
+.voting-phase,
+.round-end {
+  text-align: center;
+}
+
+.turn-phase h2,
+.voting-phase h2 {
+  margin-bottom: 24px;
+  font-size: 24px;
+}
+
+.word-input {
+  display: flex;
+  gap: 12px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.word-input input {
+  flex: 1;
+}
+
+.submitted-words {
+  margin-top: 32px;
+}
+
+.submitted-words h3 {
+  font-size: 20px;
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.words-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.word-item {
+  background: rgba(138, 139, 223, 0.15);
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba(138, 139, 223, 0.3);
+}
+
+.word-item .player-name {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.word-item .word {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.vote-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.vote-option {
+  background: rgba(138, 139, 223, 0.15);
+  padding: 16px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+  color: #E7CFCD;
+  border: 1px solid rgba(138, 139, 223, 0.3);
+}
+
+.vote-option:hover:not(:disabled) {
+  background: rgba(138, 139, 223, 0.25);
+}
+
+.vote-option.selected {
+  background: rgba(14, 52, 160, 0.4);
+  border: 2px solid #0E34A0;
+}
+
+.vote-option .word {
+  font-style: italic;
+  opacity: 0.9;
+}
+
+.round-end {
+  margin-top: 24px;
+}
+
+.eliminated {
+  background: rgba(138, 139, 223, 0.2);
+  padding: 24px;
+  border-radius: 12px;
+  margin: 16px 0;
+  border: 1px solid #8A8BDF;
+}
+
+.eliminated p {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.votes-list {
+  margin-top: 16px;
+  opacity: 0.8;
+}
+
+.game-end {
+  text-align: center;
+}
+
+.winner-banner {
+  font-size: 48px;
+  font-weight: 800;
+  padding: 32px;
+  border-radius: 16px;
+  margin-bottom: 32px;
+}
+
+.winner-banner.imposters {
+  background: rgba(220, 38, 38, 0.3);
+  border: 3px solid #dc2626;
+}
+
+.winner-banner.innocents {
+  background: rgba(34, 197, 94, 0.3);
+  border: 3px solid #22c55e;
+}
+
+.reveal {
+  margin-bottom: 32px;
+}
+
+.reveal h2 {
+  font-size: 24px;
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.secret-word {
+  font-size: 64px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  margin-bottom: 16px;
+}
+
+.teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.team {
+  background: rgba(138, 139, 223, 0.15);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(138, 139, 223, 0.3);
+}
+
+.team h3 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.team div {
+  padding: 8px;
+  background: rgba(138, 139, 223, 0.2);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}

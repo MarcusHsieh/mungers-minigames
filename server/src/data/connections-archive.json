@@ -1,0 +1,102 @@
+[
+  {
+    "id": 1,
+    "date": "2023-06-12",
+    "categories": [
+      { "name": "FISH", "difficulty": 1, "words": ["BASS", "FLOUNDER", "SALMON", "TROUT"] },
+      { "name": "STARTS OF PLANET NAMES", "difficulty": 2, "words": ["EAR", "MAR", "MER", "SAT"] },
+      { "name": "___BALL", "difficulty": 3, "words": ["BASKET", "FOOT", "SNOW", "VOLLEY"] },
+      { "name": "SLANG FOR ZERO", "difficulty": 4, "words": ["JACK", "NADA", "SQUAT", "ZIP"] }
+    ]
+  },
+  {
+    "id": 2,
+    "date": "2023-06-13",
+    "categories": [
+      { "name": "KEYBOARD KEYS", "difficulty": 1, "words": ["OPTION", "RETURN", "SHIFT", "TAB"] },
+      { "name": "VEGETABLES", "difficulty": 2, "words": ["BEET", "CARROT", "CORN", "ONION"] },
+      { "name": "MOVIES WITH \"LOVE\"", "difficulty": 3, "words": ["ACTUALLY", "BOAT", "JONES", "STORY"] },
+      { "name": "ASSOCIATED WITH \"BUMP\"", "difficulty": 4, "words": ["FIST", "GOOSE", "ROAD", "SPEED"] }
+    ]
+  },
+  {
+    "id": 3,
+    "date": "2023-06-14",
+    "categories": [
+      { "name": "SYNONYMS FOR ANGRY", "difficulty": 1, "words": ["FURIOUS", "IRATE", "LIVID", "MAD"] },
+      { "name": "U.S. STATES", "difficulty": 2, "words": ["GEORGIA", "INDIANA", "KANSAS", "VIRGINIA"] },
+      { "name": "KINDS OF TAPE", "difficulty": 3, "words": ["DUCT", "ELECTRIC", "MASKING", "SCOTCH"] },
+      { "name": "___CAST", "difficulty": 4, "words": ["BROAD", "DOWN", "OVER", "TYPE"] }
+    ]
+  },
+  {
+    "id": 4,
+    "date": "2023-06-15",
+    "categories": [
+      { "name": "ITEMS IN A CLASSIC MURDER MYSTERY", "difficulty": 1, "words": ["KNIFE", "ROPE", "CANDLESTICK", "REVOLVER"] },
+      { "name": "BREAD", "difficulty": 2, "words": ["BAGEL", "BAGUETTE", "NAAN", "PITA"] },
+      { "name": "FAMOUS GUITARISTS", "difficulty": 3, "words": ["BECK", "PAGE", "RICHARDS", "SLASH"] },
+      { "name": "WORDS BEFORE \"DOWN\"", "difficulty": 4, "words": ["BEAT", "BREAK", "SHAKE", "SHUT"] }
+    ]
+  },
+  {
+    "id": 5,
+    "date": "2023-06-16",
+    "categories": [
+      { "name": "WEATHER WORDS", "difficulty": 1, "words": ["HAIL", "RAIN", "SLEET", "SNOW"] },
+      { "name": "PASTA SHAPES", "difficulty": 2, "words": ["BOW", "ELBOW", "PENNE", "SPIRAL"] },
+      { "name": "THINGS THAT ARE CAST", "difficulty": 3, "words": ["BALLOT", "DOUBT", "FISHING LINE", "SPELL"] },
+      { "name": "___TIME", "difficulty": 4, "words": ["BED", "CRUNCH", "PRIME", "SHOW"] }
+    ]
+  },
+  {
+    "id": 6,
+    "date": "2023-06-17",
+    "categories": [
+      { "name": "MUSICAL INSTRUMENTS", "difficulty": 1, "words": ["BASS", "DRUM", "HARP", "PIANO"] },
+      { "name": "ANIMALS", "difficulty": 2, "words": ["BEAR", "DEER", "MOOSE", "SEAL"] },
+      { "name": "USED IN GOLF", "difficulty": 3, "words": ["CLUB", "DRIVER", "IRON", "TEE"] },
+      { "name": "WORDS ENDING IN METALS", "difficulty": 4, "words": ["CANCEL", "IDEAL", "PLEAD", "PLATIN"] }
+    ]
+  },
+  {
+    "id": 7,
+    "date": "2023-06-18",
+    "categories": [
+      { "name": "SEEN AT A CASINO", "difficulty": 1, "words": ["CARDS", "CHIPS", "DEALER", "DICE"] },
+      { "name": "COFFEE SHOP ORDERS", "difficulty": 2, "words": ["AMERICANO", "CAPPUCCINO", "ESPRESSO", "LATTE"] },
+      { "name": "ZODIAC SYMBOLS", "difficulty": 3, "words": ["BULL", "CRAB", "SCALES", "TWINS"] },
+      { "name": "WORDS BEFORE \"CLUB\"", "difficulty": 4, "words": ["BOOK", "FIGHT", "GLEE", "STRIP"] }
+    ]
+  },
+  {
+    "id": 8,
+    "date": "2023-06-19",
+    "categories": [
+      { "name": "TREES", "difficulty": 1, "words": ["BIRCH", "MAPLE", "OAK", "PINE"] },
+      { "name": "GEMSTONES", "difficulty": 2, "words": ["DIAMOND", "EMERALD", "RUBY", "SAPPHIRE"] },
+      { "name": "PIRATES OF THE CARIBBEAN CHARACTERS", "difficulty": 3, "words": ["GIBBS", "NORRINGTON", "SPARROW", "TURNER"] },
+      { "name": "THINGS WITH RINGS", "difficulty": 4, "words": ["CIRCUS", "MARRIAGE", "PHONE", "SATURN"] }
+    ]
+  },
+  {
+    "id": 9,
+    "date": "2023-06-20",
+    "categories": [
+      { "name": "CLASSIC TOYS", "difficulty": 1, "words": ["BLOCKS", "DOLL", "SLINKY", "YOYO"] },
+      { "name": "SHADES OF BLUE", "difficulty": 2, "words": ["AZURE", "CERULEAN", "NAVY", "TEAL"] },
+      { "name": "POKER TERMS", "difficulty": 3, "words": ["CALL", "CHECK", "FOLD", "RAISE"] },
+      { "name": "___HORN", "difficulty": 4, "words": ["BIG", "BULL", "FOG", "SHOE"] }
+    ]
+  },
+  {
+    "id": 10,
+    "date": "2023-06-21",
+    "categories": [
+      { "name": "FARM ANIMALS", "difficulty": 1, "words": ["CHICKEN", "COW", "PIG", "SHEEP"] },
+      { "name": "SPICES", "difficulty": 2, "words": ["BASIL", "CUMIN", "OREGANO", "THYME"] },
+      { "name": "HORROR MOVIE VILLAINS", "difficulty": 3, "words": ["CHUCKY", "FREDDY", "JASON", "MICHAEL"] },
+      { "name": "WORDS BEFORE \"WATER\"", "difficulty": 4, "words": ["FIRE", "RAIN", "SALT", "STILL"] }
+    ]
+  }
+]
