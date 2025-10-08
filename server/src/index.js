@@ -86,6 +86,10 @@ io.on('connection', (socket) => {
     lobbyManager.handleConnectionsSubmit(socket, data);
   });
 
+  socket.on('use_hint', () => {
+    lobbyManager.handleConnectionsHint(socket);
+  });
+
   // Disconnection
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);

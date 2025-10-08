@@ -220,6 +220,13 @@ export class LobbyManager {
     }
   }
 
+  handleConnectionsHint(socket) {
+    const lobby = this.getLobbyForSocket(socket.id);
+    if (lobby?.game instanceof ConnectionsGame) {
+      lobby.game.useHint(socket.id);
+    }
+  }
+
   // Helper methods
   getLobbyForSocket(socketId) {
     const lobbyCode = this.socketToLobby.get(socketId);

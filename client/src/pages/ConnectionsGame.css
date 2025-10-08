@@ -11,8 +11,20 @@
   margin-bottom: 24px;
 }
 
+.game-stats {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
 .mistakes {
   text-align: right;
+}
+
+.hints-info {
+  text-align: right;
+  font-weight: 600;
+  color: #fbbf24;
 }
 
 .mistake-dots {
@@ -52,6 +64,21 @@
 .message.error {
   background: rgba(239, 68, 68, 0.3);
   border: 2px solid #ef4444;
+}
+
+.message.hint {
+  background: rgba(251, 191, 36, 0.3);
+  border: 2px solid #fbbf24;
+}
+
+.hints-display {
+  padding: 12px 16px;
+  background: rgba(251, 191, 36, 0.2);
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  text-align: center;
+  color: #fbbf24;
 }
 
 @keyframes slideIn {
@@ -187,6 +214,21 @@
 .controls .secondary {
   background: rgba(138, 139, 223, 0.2);
   color: #E7CFCD;
+}
+
+.controls .hint-button {
+  background: rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+  border: 2px solid #fbbf24;
+}
+
+.controls .hint-button:hover:not(:disabled) {
+  background: rgba(251, 191, 36, 0.4);
+}
+
+.controls .hint-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .instructions {

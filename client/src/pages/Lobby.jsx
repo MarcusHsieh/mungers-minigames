@@ -342,6 +342,12 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
                       <option value={2}>2 puzzles (8 categories)</option>
                       <option value={3}>3 puzzles (12 categories)</option>
                       <option value={4}>4 puzzles (16 categories)</option>
+                      <option value={5}>5 puzzles (20 categories)</option>
+                      <option value={6}>6 puzzles (24 categories)</option>
+                      <option value={7}>7 puzzles (28 categories)</option>
+                      <option value={8}>8 puzzles (32 categories)</option>
+                      <option value={9}>9 puzzles (36 categories)</option>
+                      <option value={10}>10 puzzles (40 categories)</option>
                     </select>
                   </label>
                 </div>

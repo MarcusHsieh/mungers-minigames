@@ -15,6 +15,9 @@ function ConnectionsGame({ onEnd }) {
   const [cursors, setCursors] = useState(new Map()); // playerId -> { x, y, name }
   const [mistakeCount, setMistakeCount] = useState(0);
   const [maxMistakes, setMaxMistakes] = useState(4);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [maxHints, setMaxHints] = useState(2);
+  const [revealedHints, setRevealedHints] = useState([]);
   const [gameStatus, setGameStatus] = useState('playing'); // playing, won, lost
   const [allCategories, setAllCategories] = useState([]);
   const [message, setMessage] = useState(null);
@@ -27,7 +30,10 @@ function ConnectionsGame({ onEnd }) {
       console.log('Connections game started, received words:', data.words);
       setWords(data.words);
       setMaxMistakes(data.maxMistakes);
+      setMaxHints(data.maxHints || 2);
       setMistakeCount(0);
+      setHintsUsed(0);
+      setRevealedHints([]);
       setSolvedCategories([]);
       setMySelections(new Set());
       setOtherSelections(new Map());
@@ -81,6 +87,12 @@ function ConnectionsGame({ onEnd }) {
       showMessage(`${data.playerName} made a mistake! (${data.mistakeCount}/${data.maxMistakes})`, 'error');
     });
 
+    socket.on('hint_revealed', (data) => {
+      setHintsUsed(data.hintsUsed);
+      setRevealedHints(prev => [...prev, data.categoryName]);
+      showMessage(`${data.usedBy} revealed a hint: ${data.categoryName}`, 'hint');
+    });
+
     socket.on('connections_end', (data) => {
       setGameStatus(data.won ? 'won' : 'lost');
       setAllCategories(data.categories);
@@ -93,6 +105,7 @@ function ConnectionsGame({ onEnd }) {
       socket.off('selection_update');
       socket.off('category_solved');
       socket.off('mistake_made');
+      socket.off('hint_revealed');
       socket.off('connections_end');
     };
   }, [socket]);
@@ -171,6 +184,11 @@ function ConnectionsGame({ onEnd }) {
     setWords(prev => [...prev].sort(() => Math.random() - 0.5));
   };
 
+  const useHint = () => {
+    if (hintsUsed >= maxHints) return;
+    socket.emit('use_hint');
+  };
+
   const isWordSelectedByOthers = (word) => {
     for (const selections of otherSelections.values()) {
       if (selections.has(word)) return true;
@@ -217,15 +235,20 @@ function ConnectionsGame({ onEnd }) {
     <div className="card connections-game" ref={boardRef}>
       <div className="game-header">
         <h1 className="title">🧩 Connections</h1>
-        <div className="mistakes">
-          Mistakes: {mistakeCount} / {maxMistakes}
-          <div className="mistake-dots">
-            {[...Array(maxMistakes)].map((_, i) => (
-              <div
-                key={i}
-                className={`dot ${i < mistakeCount ? 'used' : ''}`}
-              />
-            ))}
+        <div className="game-stats">
+          <div className="mistakes">
+            Mistakes: {mistakeCount} / {maxMistakes}
+            <div className="mistake-dots">
+              {[...Array(maxMistakes)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`dot ${i < mistakeCount ? 'used' : ''}`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="hints-info">
+            Hints: {hintsUsed} / {maxHints}
           </div>
         </div>
       </div>
@@ -233,6 +256,12 @@ function ConnectionsGame({ onEnd }) {
       {message && (
         <div className={`message ${message.type}`}>
           {message.text}
+        </div>
+      )}
+
+      {revealedHints.length > 0 && (
+        <div className="hints-display">
+          <strong>💡 Hints:</strong> {revealedHints.join(', ')}
         </div>
       )}
 
@@ -287,6 +316,9 @@ function ConnectionsGame({ onEnd }) {
         </button>
         <button onClick={deselectAll} disabled={mySelections.size === 0} className="secondary">
           Deselect All
+        </button>
+        <button onClick={useHint} disabled={hintsUsed >= maxHints} className="hint-button">
+          💡 Hint ({maxHints - hintsUsed} left)
         </button>
         <button onClick={submitGroup} disabled={mySelections.size !== 4}>
           Submit

@@ -21,7 +21,9 @@ export class ConnectionsGame {
     this.categories = [];
     this.solvedCategories = [];
     this.mistakeCount = 0;
-    this.maxMistakes = 4;
+    this.maxMistakes = this.isMegaMode ? 8 : 4; // Double mistakes for mega mode
+    this.hintsUsed = 0;
+    this.maxHints = this.isMegaMode ? 4 : 2; // More hints for mega mode
     this.playerCursors = new Map(); // playerId -> { x, y }
     this.playerSelections = new Map(); // playerId -> Set of words
     this.phase = 'playing'; // playing, won, lost
@@ -39,6 +41,7 @@ export class ConnectionsGame {
     this.io.to(this.lobbyCode).emit('connections_start', {
       words: this.words,
       maxMistakes: this.maxMistakes,
+      maxHints: this.maxHints,
       isMegaMode: this.isMegaMode
     });
 
@@ -233,6 +236,7 @@ export class ConnectionsGame {
     this.io.to(playerId).emit('connections_start', {
       words: this.words,
       maxMistakes: this.maxMistakes,
+      maxHints: this.maxHints,
       isMegaMode: this.isMegaMode
     });
 
@@ -256,6 +260,37 @@ export class ConnectionsGame {
     }
 
     console.log(`Player ${playerId} joined Connections game mid-session`);
+  }
+
+  useHint(playerId) {
+    if (this.phase !== 'playing' || this.hintsUsed >= this.maxHints) {
+      return;
+    }
+
+    const player = this.lobby.players.get(playerId);
+
+    // Find an unsolved category
+    const unsolvedCategories = this.categories.filter(
+      cat => !this.solvedCategories.includes(cat.name)
+    );
+
+    if (unsolvedCategories.length === 0) return;
+
+    // Pick a random unsolved category
+    const categoryIndex = Math.floor(Math.random() * unsolvedCategories.length);
+    const hintCategory = unsolvedCategories[categoryIndex];
+
+    this.hintsUsed++;
+
+    // Send hint to all players
+    this.io.to(this.lobbyCode).emit('hint_revealed', {
+      categoryName: hintCategory.name,
+      hintsUsed: this.hintsUsed,
+      maxHints: this.maxHints,
+      usedBy: player?.name || 'Unknown'
+    });
+
+    console.log(`Hint used in lobby ${this.lobbyCode}: ${hintCategory.name}`);
   }
 
   removePlayer(playerId) {
