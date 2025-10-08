@@ -321,7 +321,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
   }
 
   return (
-    <div className="card connections-game">
+    <div className={`card connections-game ${gameStatus === 'playing' ? 'playing' : ''}`}>
       <div className="game-header">
         <h1 className="title">🧩 Connections</h1>
         <div className="game-stats">

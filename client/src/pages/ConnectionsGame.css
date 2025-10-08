@@ -2,16 +2,19 @@
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
+}
+
+.connections-game.playing {
   display: grid;
   grid-template-columns: 1fr 200px;
   gap: 24px;
 }
 
-.connections-game > * {
+.connections-game.playing > * {
   grid-column: 1;
 }
 
-.connections-game .players-sidebar {
+.connections-game.playing .players-sidebar {
   grid-column: 2;
   grid-row: 1 / -1;
 }
@@ -402,11 +405,11 @@
 }
 
 @media (max-width: 768px) {
-  .connections-game {
+  .connections-game.playing {
     grid-template-columns: 1fr;
   }
 
-  .connections-game .players-sidebar {
+  .connections-game.playing .players-sidebar {
     grid-column: 1;
     grid-row: auto;
     position: relative;
