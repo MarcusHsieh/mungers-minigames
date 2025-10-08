@@ -26,15 +26,18 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
     socket.on('lobby_update', (updatedLobby) => {
       setLobby(updatedLobby);
       setIsHost(socket.id === updatedLobby.host);
+
+      // Transition to game screen when lobby state changes to 'playing'
+      if (updatedLobby.state === 'playing' && lobby?.state !== 'playing') {
+        onStartGame(updatedLobby.gameType);
+      }
     });
 
-    // Listen for game start
+    // Listen for game start (for Imposter)
     socket.on('game_start', () => {
-      onStartGame(lobby.gameType);
-    });
-
-    socket.on('connections_start', () => {
-      onStartGame('connections');
+      if (lobby?.gameType === 'imposter') {
+        onStartGame(lobby.gameType);
+      }
     });
 
     setIsHost(socket.id === lobbyData.host);
@@ -42,9 +45,8 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
     return () => {
       socket.off('lobby_update');
       socket.off('game_start');
-      socket.off('connections_start');
     };
-  }, [socket, lobbyData, onStartGame, lobby?.gameType]);
+  }, [socket, lobbyData, onStartGame, lobby?.gameType, lobby?.state]);
 
   const handleStartGame = () => {
     socket.emit('start_game', { settings });
