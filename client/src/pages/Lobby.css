@@ -87,6 +87,23 @@
   font-size: 14px;
 }
 
+.game-info .back-button {
+  margin-top: 16px;
+  padding: 10px 16px;
+  background: rgba(138, 139, 223, 0.2);
+  color: #E7CFCD;
+  border: 1px solid rgba(138, 139, 223, 0.4);
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.game-info .back-button:hover {
+  background: rgba(138, 139, 223, 0.3);
+  border-color: rgba(138, 139, 223, 0.6);
+}
+
 .lobby-actions {
   display: flex;
   flex-direction: column;

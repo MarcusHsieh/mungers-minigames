@@ -21,6 +21,13 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
     puzzleCount: 1
   });
 
+  // Initialize isHost on mount
+  useEffect(() => {
+    if (socket && lobbyData) {
+      setIsHost(socket.id === lobbyData.host);
+    }
+  }, [socket, lobbyData]);
+
   useEffect(() => {
     if (!socket) return;
 
@@ -121,6 +128,10 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
     socket.emit('select_gamemode', { gameType, settings: {} });
   };
 
+  const backToGameSelection = () => {
+    socket.emit('select_gamemode', { gameType: null, settings: {} });
+  };
+
   if (!lobby) return null;
 
   const minPlayers = lobby.gameType === 'imposter' ? 3 : 1;
@@ -203,6 +214,11 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
             <p className="tip">
               💡 Innocents get the secret word. Imposters must blend in!
             </p>
+            {isHost && (
+              <button onClick={backToGameSelection} className="back-button">
+                ← Change Game Mode
+              </button>
+            )}
           </div>
 
           {isHost && (
@@ -314,6 +330,11 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
             <p className="tip">
               💡 Work together to find groups of four related words!
             </p>
+            {isHost && (
+              <button onClick={backToGameSelection} className="back-button">
+                ← Change Game Mode
+              </button>
+            )}
           </div>
 
           {isHost && (

@@ -118,6 +118,15 @@ export class LobbyManager {
 
     const { gameType, settings } = data;
 
+    // Allow null to go back to selection
+    if (gameType === null) {
+      lobby.gameType = null;
+      lobby.state = 'selecting';
+      console.log(`Lobby ${lobbyCode} returned to gamemode selection`);
+      this.broadcastLobbyUpdate(lobbyCode);
+      return;
+    }
+
     if (!['imposter', 'connections'].includes(gameType)) {
       return;
     }
