@@ -286,12 +286,25 @@
   border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
+.player-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
 .player-name {
   font-size: 14px;
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.player-score {
+  font-size: 12px;
+  color: #fbbf24;
+  font-weight: 600;
 }
 
 .controls {
@@ -334,6 +347,54 @@
 
 .instructions p {
   margin-bottom: 4px;
+}
+
+.final-scores {
+  background: rgba(138, 139, 223, 0.1);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.final-scores h2 {
+  font-size: 20px;
+  margin-bottom: 16px;
+  text-align: center;
+  color: #fbbf24;
+}
+
+.scores-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.score-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(138, 139, 223, 0.15);
+  border-radius: 8px;
+}
+
+.score-rank {
+  font-size: 18px;
+  font-weight: 700;
+  color: #8A8BDF;
+  min-width: 35px;
+}
+
+.score-name {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.score-points {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fbbf24;
 }
 
 .results {

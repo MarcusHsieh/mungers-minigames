@@ -100,88 +100,142 @@
 
 /* Lobby list styles */
 .lobby-list {
-  margin-top: 24px;
+  margin-top: 32px;
   width: 100%;
 }
 
 .lobby-list h2 {
-  font-size: 20px;
-  margin-bottom: 16px;
-  opacity: 0.9;
+  font-size: 24px;
+  margin-bottom: 20px;
+  opacity: 0.95;
   text-align: center;
+  font-weight: 600;
 }
 
 .no-lobbies {
   text-align: center;
-  padding: 32px;
+  padding: 48px 24px;
   opacity: 0.7;
+  font-size: 16px;
 }
 
 .lobbies {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
 }
 
 .lobby-item {
-  background: rgba(138, 139, 223, 0.15);
-  padding: 16px;
-  border-radius: 8px;
+  background: rgba(138, 139, 223, 0.12);
+  padding: 20px;
+  border-radius: 12px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid rgba(138, 139, 223, 0.2);
-  transition: all 0.2s;
+  flex-direction: column;
+  gap: 12px;
+  border: 2px solid rgba(138, 139, 223, 0.25);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .lobby-item:hover {
-  background: rgba(138, 139, 223, 0.25);
-  border-color: rgba(138, 139, 223, 0.4);
+  background: rgba(138, 139, 223, 0.2);
+  border-color: #8A8BDF;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(138, 139, 223, 0.3);
 }
 
 .lobby-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   flex: 1;
 }
 
 .lobby-code {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 28px;
+  font-weight: 800;
   color: #8A8BDF;
-  letter-spacing: 1px;
+  letter-spacing: 3px;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.lobby-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .lobby-host,
-.lobby-players,
-.lobby-gamemode {
+.lobby-players {
   font-size: 14px;
   opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lobby-host::before {
+  content: "👤";
+  font-size: 14px;
+}
+
+.lobby-players::before {
+  content: "👥";
+  font-size: 14px;
 }
 
 .lobby-gamemode {
-  margin-top: 4px;
-  font-size: 13px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(138, 139, 223, 0.2);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.lobby-gamemode.selecting {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.lobby-gamemode.waiting {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.lobby-gamemode.playing {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
 }
 
 .lobby-gamemode .in-game {
-  color: #10b981;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .join-button {
   background: #8A8BDF;
   color: #343434;
   border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.2s;
+  margin-top: 4px;
 }
 
 .join-button:hover {
   background: #9B9CEF;
   transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(138, 139, 223, 0.4);
+}
+
+@media (max-width: 768px) {
+  .lobbies {
+    grid-template-columns: 1fr;
+  }
 }

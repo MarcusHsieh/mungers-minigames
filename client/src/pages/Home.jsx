@@ -156,21 +156,23 @@ function Home({ onJoinLobby }) {
               {lobbyList.map(lobby => (
                 <div key={lobby.code} className="lobby-item">
                   <div className="lobby-info">
-                    <span className="lobby-code">{lobby.code}</span>
-                    <span className="lobby-host">Host: {lobby.hostName}</span>
-                    <span className="lobby-players">{lobby.playerCount} player{lobby.playerCount !== 1 ? 's' : ''}</span>
-                    <span className="lobby-gamemode">
+                    <div className="lobby-code">{lobby.code}</div>
+                    <div className="lobby-details">
+                      <span className="lobby-host">{lobby.hostName}</span>
+                      <span className="lobby-players">{lobby.playerCount} player{lobby.playerCount !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className={`lobby-gamemode ${lobby.state}`}>
                       {lobby.state === 'playing' ? (
                         <span className="in-game">
-                          🎮 In-game: {lobby.gameType === 'imposter' ? 'Imposter (spectate)' : 'Connections (join)'}
+                          {lobby.gameType === 'imposter' ? '🕵️ Imposter (spectate)' : '🧩 Connections (join)'}
                         </span>
-                      ) : lobby.gameType === 'imposter' ? '🕵️ Imposter' :
-                        lobby.gameType === 'connections' ? '🧩 Connections' :
-                        '🎮 Selecting gamemode'}
-                    </span>
+                      ) : lobby.state === 'waiting' ? (
+                        lobby.gameType === 'imposter' ? '🕵️ Imposter - Waiting' : '🧩 Connections - Waiting'
+                      ) : '🎮 Selecting gamemode'}
+                    </div>
                   </div>
                   <button onClick={() => quickJoinLobby(lobby.code)} className="join-button">
-                    Join
+                    Join Lobby
                   </button>
                 </div>
               ))}

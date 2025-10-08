@@ -27,6 +27,7 @@ export class ConnectionsGame {
     this.revealedHints = []; // Track which category names were revealed as hints
     this.playerCursors = new Map(); // playerId -> { x, y }
     this.playerSelections = new Map(); // playerId -> Set of words
+    this.playerScores = new Map(); // playerId -> score
     this.phase = 'playing'; // playing, won, lost
   }
 
@@ -173,6 +174,10 @@ export class ConnectionsGame {
       // Correct!
       this.solvedCategories.push(matchedCategory.name);
 
+      // Award points
+      const currentScore = this.playerScores.get(playerId) || 0;
+      this.playerScores.set(playerId, currentScore + 100);
+
       // Clear selections for this player
       this.playerSelections.set(playerId, new Set());
 
@@ -182,12 +187,22 @@ export class ConnectionsGame {
         playerId
       });
 
+      // Broadcast score update
+      this.io.to(this.lobbyCode).emit('score_update', {
+        playerId,
+        score: this.playerScores.get(playerId),
+        playerName: player?.name || 'Unknown'
+      });
+
       // Check if all categories solved
       if (this.solvedCategories.length === this.categories.length) {
         this.endGame(true);
       }
     } else {
-      // Incorrect
+      // Incorrect - deduct points
+      const currentScore = this.playerScores.get(playerId) || 0;
+      this.playerScores.set(playerId, Math.max(0, currentScore - 25)); // Don't go below 0
+
       this.mistakeCount++;
 
       this.io.to(this.lobbyCode).emit('mistake_made', {
@@ -195,6 +210,13 @@ export class ConnectionsGame {
         playerName: player?.name || 'Unknown',
         mistakeCount: this.mistakeCount,
         maxMistakes: this.maxMistakes
+      });
+
+      // Broadcast score update
+      this.io.to(this.lobbyCode).emit('score_update', {
+        playerId,
+        score: this.playerScores.get(playerId),
+        playerName: player?.name || 'Unknown'
       });
 
       // Check if too many mistakes
@@ -207,10 +229,21 @@ export class ConnectionsGame {
   endGame(won) {
     this.phase = won ? 'won' : 'lost';
 
+    // Prepare scores array with player info
+    const scores = Array.from(this.playerScores.entries()).map(([playerId, score]) => {
+      const player = this.lobby.players.get(playerId);
+      return {
+        playerId,
+        playerName: player?.name || 'Unknown',
+        score
+      };
+    }).sort((a, b) => b.score - a.score); // Sort by score descending
+
     this.io.to(this.lobbyCode).emit('connections_end', {
       won,
       categories: this.categories,
-      solvedCategories: this.solvedCategories
+      solvedCategories: this.solvedCategories,
+      scores
     });
 
     // Return lobby to gamemode selection after delay
@@ -233,6 +266,7 @@ export class ConnectionsGame {
     // Initialize state for new player joining mid-game
     this.playerCursors.set(playerId, { x: 50, y: 50 });
     this.playerSelections.set(playerId, new Set());
+    this.playerScores.set(playerId, 0); // Initialize score for new player
 
     // Send current game state to new player
     this.io.to(playerId).emit('connections_start', {
@@ -271,6 +305,16 @@ export class ConnectionsGame {
         playerName: 'System',
         mistakeCount: this.mistakeCount,
         maxMistakes: this.maxMistakes
+      });
+    }
+
+    // Send current scores for all players
+    for (const [scorePlayerId, score] of this.playerScores.entries()) {
+      const player = this.lobby.players.get(scorePlayerId);
+      this.io.to(playerId).emit('score_update', {
+        playerId: scorePlayerId,
+        score,
+        playerName: player?.name || 'Unknown'
       });
     }
 

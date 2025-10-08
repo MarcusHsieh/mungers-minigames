@@ -25,6 +25,8 @@ function ConnectionsGame({ onEnd, lobbyData }) {
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [players, setPlayers] = useState([]);
+  const [playerScores, setPlayerScores] = useState(new Map()); // playerId -> score
+  const [finalScores, setFinalScores] = useState([]);
 
   // Initialize players from lobby data
   useEffect(() => {
@@ -119,9 +121,20 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       setRevealedHints(data.revealedHints || []);
     });
 
+    socket.on('score_update', (data) => {
+      setPlayerScores(prev => {
+        const updated = new Map(prev);
+        updated.set(data.playerId, data.score);
+        return updated;
+      });
+    });
+
     socket.on('connections_end', (data) => {
       setGameStatus(data.won ? 'won' : 'lost');
       setAllCategories(data.categories);
+      if (data.scores) {
+        setFinalScores(data.scores);
+      }
     });
 
     return () => {
@@ -134,6 +147,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       socket.off('mistake_made');
       socket.off('hint_revealed');
       socket.off('sync_hints');
+      socket.off('score_update');
       socket.off('connections_end');
     };
   }, [socket]);
@@ -260,6 +274,21 @@ function ConnectionsGame({ onEnd, lobbyData }) {
     return (
       <div className="card connections-game">
         <h1 className="title">{gameStatus === 'won' ? '🎉 You Won!' : '😔 Game Over'}</h1>
+
+        {finalScores.length > 0 && (
+          <div className="final-scores">
+            <h2>Final Scores</h2>
+            <div className="scores-list">
+              {finalScores.map((score, idx) => (
+                <div key={score.playerId} className="score-item">
+                  <span className="score-rank">#{idx + 1}</span>
+                  <span className="score-name">{score.playerName}</span>
+                  <span className="score-points">{score.score} pts</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="results">
           {allCategories.map((cat, idx) => (
@@ -398,7 +427,10 @@ function ConnectionsGame({ onEnd, lobbyData }) {
               >
                 {idx + 1}
               </span>
-              <span className="player-name">{player.name}</span>
+              <div className="player-info">
+                <span className="player-name">{player.name}</span>
+                <span className="player-score">{playerScores.get(player.id) || 0} pts</span>
+              </div>
             </div>
           ))}
         </div>
