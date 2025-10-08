@@ -17,17 +17,26 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
+    console.log('Attempting to connect to:', serverUrl);
+
     const newSocket = io(serverUrl, {
-      autoConnect: true
+      autoConnect: true,
+      transports: ['websocket', 'polling']
     });
 
     newSocket.on('connect', () => {
-      console.log('Connected to server');
+      console.log('✅ Connected to server:', serverUrl);
       setConnected(true);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('Disconnected from server');
+      console.log('❌ Disconnected from server');
+      setConnected(false);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('❌ Connection error:', error.message);
+      console.error('Server URL:', serverUrl);
       setConnected(false);
     });
 

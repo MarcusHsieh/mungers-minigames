@@ -63,15 +63,18 @@ function Home({ onJoinLobby }) {
   if (!connected) {
     return (
       <div className="card">
-        <h1 className="title">Munger's Arcade</h1>
+        <h1 className="title">Munger's Minigames</h1>
         <p className="subtitle">Connecting to server...</p>
+        <p style={{ fontSize: '14px', opacity: 0.7, marginTop: '10px' }}>
+          Server: {import.meta.env.VITE_SERVER_URL || 'http://localhost:3000'}
+        </p>
       </div>
     );
   }
 
   return (
     <div className="card home">
-      <h1 className="title">🎮 Munger's Arcade</h1>
+      <h1 className="title">🎮 Munger's Minigames</h1>
       <p className="subtitle">Choose your game and get started!</p>
 
       <div className="game-selector">
