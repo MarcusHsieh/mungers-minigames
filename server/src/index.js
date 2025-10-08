@@ -46,6 +46,15 @@ io.on('connection', (socket) => {
     lobbyManager.leaveLobby(socket);
   });
 
+  socket.on('get_lobby_list', (callback) => {
+    const lobbies = lobbyManager.getPublicLobbies();
+    callback({ success: true, lobbies });
+  });
+
+  socket.on('select_gamemode', (data) => {
+    lobbyManager.selectGamemode(socket, data);
+  });
+
   socket.on('start_game', (data) => {
     lobbyManager.startGame(socket, data);
   });
@@ -66,6 +75,11 @@ io.on('connection', (socket) => {
 
   socket.on('select_word', (data) => {
     lobbyManager.handleConnectionsSelection(socket, data);
+  });
+
+  // Lobby cursor events
+  socket.on('lobby_cursor_move', (data) => {
+    lobbyManager.handleLobbyCursor(socket, data);
   });
 
   socket.on('submit_group', (data) => {

@@ -18,6 +18,11 @@ function App() {
     setScreen(gameType);
   };
 
+  const returnToLobby = () => {
+    // Return to lobby after game ends (preserves lobbyData)
+    setScreen('lobby');
+  };
+
   const goHome = () => {
     setScreen('home');
     setLobbyData(null);
@@ -30,8 +35,8 @@ function App() {
         {screen === 'lobby' && (
           <Lobby lobbyData={lobbyData} onStartGame={startGame} onLeave={goHome} />
         )}
-        {screen === 'imposter' && <ImposterGame onEnd={goHome} />}
-        {screen === 'connections' && <ConnectionsGame onEnd={goHome} />}
+        {screen === 'imposter' && <ImposterGame onEnd={returnToLobby} />}
+        {screen === 'connections' && <ConnectionsGame onEnd={returnToLobby} />}
       </div>
     </SocketProvider>
   );

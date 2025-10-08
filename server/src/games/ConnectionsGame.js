@@ -6,9 +6,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export class ConnectionsGame {
-  constructor(io, lobby) {
+  constructor(io, lobby, lobbyManager) {
     this.io = io;
     this.lobby = lobby;
+    this.lobbyManager = lobbyManager;
     this.lobbyCode = lobby.code;
 
     // Game settings
@@ -100,18 +101,25 @@ export class ConnectionsGame {
   }
 
   updateCursor(playerId, data) {
-    const { x, y } = data;
+    // Validate and clamp coordinates to 0-100 range
+    const x = Math.max(0, Math.min(100, parseFloat(data.x) || 0));
+    const y = Math.max(0, Math.min(100, parseFloat(data.y) || 0));
+
     this.playerCursors.set(playerId, { x, y });
 
     const player = this.lobby.players.get(playerId);
+    if (!player) return; // Player not in lobby
 
-    // Broadcast to all other players in the room
-    this.io.to(this.lobbyCode).emit('cursor_update', {
-      playerId,
-      playerName: player?.name || 'Unknown',
-      x,
-      y
-    });
+    // Get sender's socket to exclude from broadcast
+    const senderSocket = this.io.sockets.sockets.get(playerId);
+    if (senderSocket) {
+      senderSocket.broadcast.to(this.lobbyCode).emit('cursor_update', {
+        playerId,
+        playerName: player.name,
+        x,
+        y
+      });
+    }
   }
 
   selectWord(playerId, word) {
@@ -200,8 +208,29 @@ export class ConnectionsGame {
       solvedCategories: this.solvedCategories
     });
 
-    // Don't reset lobby for Connections - allow players to stay
-    // Just reset game state for a new round if desired
+    // Return lobby to gamemode selection after delay
+    setTimeout(() => {
+      // Check if lobby still exists
+      if (!this.lobbyManager.lobbies.has(this.lobbyCode)) {
+        return;
+      }
+
+      this.lobby.state = 'selecting';
+      this.lobby.gameType = null;
+      this.lobby.game = null;
+
+      console.log(`Lobby ${this.lobbyCode} returning to gamemode selection`);
+      this.lobbyManager.broadcastLobbyUpdate(this.lobbyCode);
+    }, 5000);
+  }
+
+  removePlayer(playerId) {
+    // Clean up player's cursor and selections
+    this.playerCursors.delete(playerId);
+    this.playerSelections.delete(playerId);
+
+    // Notify other players that cursor is gone
+    this.io.to(this.lobbyCode).emit('cursor_remove', { playerId });
   }
 
   // Allow restarting the game with a new puzzle

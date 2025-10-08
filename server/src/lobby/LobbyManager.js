@@ -17,12 +17,12 @@ export class LobbyManager {
 
     const lobby = {
       code: lobbyCode,
-      gameType, // 'imposter' or 'connections'
+      gameType: gameType || null, // null until selected, or use provided gameType for compatibility
       host: socket.id,
       players: new Map([[socket.id, { id: socket.id, name: playerName, isHost: true }]]),
       settings: settings || {},
       game: null,
-      state: 'waiting' // waiting, playing, finished
+      state: gameType ? 'waiting' : 'selecting' // 'selecting' if no gameType provided, 'waiting' otherwise
     };
 
     this.lobbies.set(lobbyCode, lobby);
@@ -65,6 +65,16 @@ export class LobbyManager {
     const lobby = this.lobbies.get(lobbyCode);
     if (!lobby) return;
 
+    // Notify game instance about player leaving (for cleanup)
+    if (lobby.game && typeof lobby.game.removePlayer === 'function') {
+      lobby.game.removePlayer(socket.id);
+    }
+
+    // Remove lobby cursor for this player
+    socket.broadcast.to(lobby.code).emit('lobby_cursor_remove', {
+      playerId: socket.id
+    });
+
     lobby.players.delete(socket.id);
     this.socketToLobby.delete(socket.id);
     socket.leave(lobbyCode);
@@ -90,6 +100,30 @@ export class LobbyManager {
     this.leaveLobby(socket);
   }
 
+  selectGamemode(socket, data) {
+    const lobbyCode = this.socketToLobby.get(socket.id);
+    const lobby = this.lobbies.get(lobbyCode);
+
+    if (!lobby || lobby.host !== socket.id) {
+      return; // Only host can select gamemode
+    }
+
+    const { gameType, settings } = data;
+
+    if (!['imposter', 'connections'].includes(gameType)) {
+      return;
+    }
+
+    lobby.gameType = gameType;
+    if (settings) {
+      lobby.settings = { ...lobby.settings, ...settings };
+    }
+    lobby.state = 'waiting'; // Move to waiting state
+
+    console.log(`Lobby ${lobbyCode} gamemode selected: ${gameType}`);
+    this.broadcastLobbyUpdate(lobbyCode);
+  }
+
   startGame(socket, data) {
     const lobbyCode = this.socketToLobby.get(socket.id);
     const lobby = this.lobbies.get(lobbyCode);
@@ -111,10 +145,10 @@ export class LobbyManager {
     // Give clients time to mount the game component, then start game
     setTimeout(() => {
       if (lobby.gameType === 'imposter') {
-        lobby.game = new ImposterGame(this.io, lobby);
+        lobby.game = new ImposterGame(this.io, lobby, this);
         lobby.game.start();
       } else if (lobby.gameType === 'connections') {
-        lobby.game = new ConnectionsGame(this.io, lobby);
+        lobby.game = new ConnectionsGame(this.io, lobby, this);
         lobby.game.start();
       }
     }, 100);
@@ -141,6 +175,27 @@ export class LobbyManager {
     if (lobby?.game instanceof ConnectionsGame) {
       lobby.game.updateCursor(socket.id, data);
     }
+  }
+
+  // Lobby cursor handler
+  handleLobbyCursor(socket, data) {
+    const lobby = this.getLobbyForSocket(socket.id);
+    if (!lobby) return;
+
+    const player = lobby.players.get(socket.id);
+    if (!player) return;
+
+    // Validate and clamp coordinates to 0-100 range
+    const x = Math.max(0, Math.min(100, parseFloat(data.x) || 0));
+    const y = Math.max(0, Math.min(100, parseFloat(data.y) || 0));
+
+    // Broadcast to others in lobby (exclude sender)
+    socket.broadcast.to(lobby.code).emit('lobby_cursor_update', {
+      playerId: socket.id,
+      playerName: player.name,
+      x,
+      y
+    });
   }
 
   handleConnectionsSelection(socket, data) {
@@ -179,6 +234,25 @@ export class LobbyManager {
     if (lobby) {
       this.io.to(lobbyCode).emit('lobby_update', this.getLobbyInfo(lobby));
     }
+  }
+
+  getPublicLobbies() {
+    const publicLobbies = [];
+
+    for (const [code, lobby] of this.lobbies.entries()) {
+      // Only show lobbies in 'selecting' or 'waiting' state (not in active games)
+      if (lobby.state === 'selecting' || lobby.state === 'waiting') {
+        publicLobbies.push({
+          code: lobby.code,
+          playerCount: lobby.players.size,
+          state: lobby.state,
+          gameType: lobby.gameType,
+          hostName: lobby.players.get(lobby.host)?.name || 'Unknown'
+        });
+      }
+    }
+
+    return publicLobbies;
   }
 
   getStats() {

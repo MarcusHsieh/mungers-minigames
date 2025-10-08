@@ -1,7 +1,8 @@
 export class ImposterGame {
-  constructor(io, lobby) {
+  constructor(io, lobby, lobbyManager) {
     this.io = io;
     this.lobby = lobby;
+    this.lobbyManager = lobbyManager;
     this.lobbyCode = lobby.code;
 
     // Game settings with defaults
@@ -281,10 +282,19 @@ export class ImposterGame {
       }))
     });
 
-    // Reset lobby state
+    // Return lobby to gamemode selection after delay
     setTimeout(() => {
-      this.lobby.state = 'waiting';
+      // Check if lobby still exists
+      if (!this.lobbyManager.lobbies.has(this.lobbyCode)) {
+        return;
+      }
+
+      this.lobby.state = 'selecting';
+      this.lobby.gameType = null;
       this.lobby.game = null;
+
+      console.log(`Lobby ${this.lobbyCode} returning to gamemode selection`);
+      this.lobbyManager.broadcastLobbyUpdate(this.lobbyCode);
     }, 5000);
   }
 }

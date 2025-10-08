@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import './Lobby.css';
 
@@ -6,6 +6,8 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
   const { socket } = useSocket();
   const [lobby, setLobby] = useState(lobbyData);
   const [isHost, setIsHost] = useState(false);
+  const [lobbyCursors, setLobbyCursors] = useState(new Map());
+  const lobbyAreaRef = useRef(null);
   const [settings, setSettings] = useState({
     imposterCount: 1,
     turnTimeLimit: 30,
@@ -40,13 +42,67 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
       }
     });
 
+    // Listen for lobby cursor updates
+    socket.on('lobby_cursor_update', (data) => {
+      if (data.playerId !== socket.id) {
+        setLobbyCursors(prev => new Map(prev).set(data.playerId, {
+          x: data.x,
+          y: data.y,
+          name: data.playerName
+        }));
+      }
+    });
+
+    socket.on('lobby_cursor_remove', (data) => {
+      setLobbyCursors(prev => {
+        const newCursors = new Map(prev);
+        newCursors.delete(data.playerId);
+        return newCursors;
+      });
+    });
+
     setIsHost(socket.id === lobbyData.host);
 
     return () => {
       socket.off('lobby_update');
       socket.off('game_start');
+      socket.off('lobby_cursor_update');
+      socket.off('lobby_cursor_remove');
     };
   }, [socket, lobbyData, onStartGame, lobby?.gameType, lobby?.state]);
+
+  // Track mouse movement for lobby cursors
+  useEffect(() => {
+    if (!lobbyAreaRef.current || !socket) return;
+
+    let throttleTimeout = null;
+
+    const handleMouseMove = (e) => {
+      if (!throttleTimeout) {
+        const rect = lobbyAreaRef.current.getBoundingClientRect();
+        let x = ((e.clientX - rect.left) / rect.width) * 100;
+        let y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        // Clamp to 0-100 range
+        x = Math.max(0, Math.min(100, x));
+        y = Math.max(0, Math.min(100, y));
+
+        socket.emit('lobby_cursor_move', { x, y });
+
+        throttleTimeout = setTimeout(() => {
+          throttleTimeout = null;
+        }, 50);
+      }
+    };
+
+    const area = lobbyAreaRef.current;
+    area.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      area.removeEventListener('mousemove', handleMouseMove);
+      if (throttleTimeout) clearTimeout(throttleTimeout);
+    };
+  }, [socket]);
 
   const handleStartGame = () => {
     socket.emit('start_game', { settings });
@@ -61,16 +117,36 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
     onLeave();
   };
 
+  const selectGamemode = (gameType) => {
+    socket.emit('select_gamemode', { gameType, settings: {} });
+  };
+
   if (!lobby) return null;
 
   const minPlayers = lobby.gameType === 'imposter' ? 3 : 1;
   const canStart = lobby.players.length >= minPlayers && isHost;
 
   return (
-    <div className="card lobby">
+    <div className="card lobby" ref={lobbyAreaRef}>
+      {/* Render other players' cursors */}
+      {Array.from(lobbyCursors.entries()).map(([playerId, cursor]) => (
+        <div
+          key={playerId}
+          className="lobby-cursor"
+          style={{
+            left: `${cursor.x}%`,
+            top: `${cursor.y}%`
+          }}
+        >
+          <div className="cursor-pointer">▲</div>
+          <div className="cursor-name">{cursor.name}</div>
+        </div>
+      ))}
+
       <div className="lobby-header">
         <h1 className="title">
-          {lobby.gameType === 'imposter' ? '🕵️ Imposter' : '🧩 Connections'}
+          {lobby.state === 'selecting' ? '🎮 Select Game Mode' :
+           lobby.gameType === 'imposter' ? '🕵️ Imposter' : '🧩 Connections'}
         </h1>
         <div className="lobby-code">
           <span>Lobby Code:</span>
@@ -90,7 +166,35 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
         </div>
       </div>
 
-      {lobby.gameType === 'imposter' && (
+      {lobby.state === 'selecting' && isHost && (
+        <div className="gamemode-selection">
+          <div className="game-info">
+            <p className="tip">
+              Choose which game to play:
+            </p>
+          </div>
+          <div className="gamemode-buttons">
+            <button onClick={() => selectGamemode('imposter')} className="gamemode-button">
+              <div className="game-icon">🕵️</div>
+              <h3>Imposter</h3>
+              <p>Social deduction word game</p>
+            </button>
+            <button onClick={() => selectGamemode('connections')} className="gamemode-button">
+              <div className="game-icon">🧩</div>
+              <h3>Connections</h3>
+              <p>Collaborative word puzzle</p>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {lobby.state === 'selecting' && !isHost && (
+        <div className="game-info">
+          <p className="waiting">Waiting for host to select game mode...</p>
+        </div>
+      )}
+
+      {lobby.gameType === 'imposter' && lobby.state === 'waiting' && (
         <>
           <div className="game-info">
             <p>
@@ -204,7 +308,7 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
         </>
       )}
 
-      {lobby.gameType === 'connections' && (
+      {lobby.gameType === 'connections' && lobby.state === 'waiting' && (
         <>
           <div className="game-info">
             <p className="tip">

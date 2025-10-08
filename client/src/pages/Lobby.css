@@ -156,3 +156,77 @@
   height: 18px;
   cursor: pointer;
 }
+
+/* Lobby cursor styles */
+.lobby {
+  position: relative;
+  overflow: hidden;
+}
+
+.lobby-cursor {
+  position: absolute;
+  pointer-events: none;
+  z-index: 100;
+  transition: left 0.05s linear, top 0.05s linear;
+}
+
+.lobby-cursor .cursor-pointer {
+  color: #8A8BDF;
+  font-size: 20px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.lobby-cursor .cursor-name {
+  background: rgba(0, 0, 0, 0.8);
+  color: #8A8BDF;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+
+/* Gamemode selection styles */
+.gamemode-selection {
+  margin-bottom: 24px;
+}
+
+.gamemode-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.gamemode-button {
+  background: rgba(138, 139, 223, 0.15);
+  border: 2px solid rgba(138, 139, 223, 0.3);
+  border-radius: 12px;
+  padding: 24px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.gamemode-button:hover {
+  background: rgba(138, 139, 223, 0.25);
+  border-color: #8A8BDF;
+  transform: translateY(-2px);
+}
+
+.gamemode-button .game-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.gamemode-button h3 {
+  font-size: 20px;
+  margin-bottom: 8px;
+  color: #E7CFCD;
+}
+
+.gamemode-button p {
+  font-size: 14px;
+  opacity: 0.8;
+  margin: 0;
+}

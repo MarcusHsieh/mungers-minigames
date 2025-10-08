@@ -88,3 +88,95 @@
   text-align: center;
   color: #E7CFCD;
 }
+
+.actions .secondary {
+  background: rgba(138, 139, 223, 0.2);
+  color: #E7CFCD;
+}
+
+.actions .secondary:hover {
+  background: rgba(138, 139, 223, 0.3);
+}
+
+/* Lobby list styles */
+.lobby-list {
+  margin-top: 24px;
+  width: 100%;
+}
+
+.lobby-list h2 {
+  font-size: 20px;
+  margin-bottom: 16px;
+  opacity: 0.9;
+  text-align: center;
+}
+
+.no-lobbies {
+  text-align: center;
+  padding: 32px;
+  opacity: 0.7;
+}
+
+.lobbies {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lobby-item {
+  background: rgba(138, 139, 223, 0.15);
+  padding: 16px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid rgba(138, 139, 223, 0.2);
+  transition: all 0.2s;
+}
+
+.lobby-item:hover {
+  background: rgba(138, 139, 223, 0.25);
+  border-color: rgba(138, 139, 223, 0.4);
+}
+
+.lobby-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.lobby-code {
+  font-size: 18px;
+  font-weight: bold;
+  color: #8A8BDF;
+  letter-spacing: 1px;
+}
+
+.lobby-host,
+.lobby-players,
+.lobby-gamemode {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.lobby-gamemode {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.join-button {
+  background: #8A8BDF;
+  color: #343434;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.join-button:hover {
+  background: #9B9CEF;
+  transform: scale(1.05);
+}

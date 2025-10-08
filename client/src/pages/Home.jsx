@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSocket } from '../context/SocketContext';
 import './Home.css';
 
 function Home({ onJoinLobby }) {
   const { socket, connected } = useSocket();
-  const [gameType, setGameType] = useState('imposter');
   const [playerName, setPlayerName] = useState('');
   const [lobbyCode, setLobbyCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [lobbyList, setLobbyList] = useState([]);
+  const [showLobbyList, setShowLobbyList] = useState(false);
 
   const createLobby = () => {
     if (!playerName.trim()) {
@@ -20,9 +21,8 @@ function Home({ onJoinLobby }) {
     setError('');
 
     socket.emit('create_lobby', {
-      gameType,
       playerName: playerName.trim(),
-      settings: gameType === 'connections' ? { megaMode: false, puzzleCount: 1 } : {}
+      settings: {}
     }, (response) => {
       setLoading(false);
       if (response.success) {
@@ -60,6 +60,42 @@ function Home({ onJoinLobby }) {
     });
   };
 
+  const quickJoinLobby = (code) => {
+    if (!playerName.trim()) {
+      setError('Please enter your name first');
+      return;
+    }
+
+    socket.emit('join_lobby', {
+      lobbyCode: code,
+      playerName: playerName.trim()
+    }, (response) => {
+      if (response.success) {
+        onJoinLobby(response.lobby);
+      } else {
+        setError(response.error || 'Failed to join lobby');
+      }
+    });
+  };
+
+  // Poll for lobby list when browser is visible
+  useEffect(() => {
+    if (!socket || !showLobbyList) return;
+
+    const fetchLobbies = () => {
+      socket.emit('get_lobby_list', (response) => {
+        if (response.success) {
+          setLobbyList(response.lobbies);
+        }
+      });
+    };
+
+    fetchLobbies();
+    const interval = setInterval(fetchLobbies, 2000); // Poll every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [socket, showLobbyList]);
+
   if (!connected) {
     return (
       <div className="card">
@@ -75,27 +111,7 @@ function Home({ onJoinLobby }) {
   return (
     <div className="card home">
       <h1 className="title">🎮 Munger's Minigames</h1>
-      <p className="subtitle">Choose your game and get started!</p>
-
-      <div className="game-selector">
-        <button
-          className={`game-card ${gameType === 'imposter' ? 'selected' : ''}`}
-          onClick={() => setGameType('imposter')}
-        >
-          <div className="game-icon">🕵️</div>
-          <h3>Imposter</h3>
-          <p>Social deduction word game</p>
-        </button>
-
-        <button
-          className={`game-card ${gameType === 'connections' ? 'selected' : ''}`}
-          onClick={() => setGameType('connections')}
-        >
-          <div className="game-icon">🧩</div>
-          <h3>Connections</h3>
-          <p>Collaborative word puzzle</p>
-        </button>
-      </div>
+      <p className="subtitle">Create or join a lobby to get started!</p>
 
       <div className="input-group">
         <input
@@ -109,7 +125,7 @@ function Home({ onJoinLobby }) {
 
       <div className="actions">
         <button onClick={createLobby} disabled={loading}>
-          Create Lobby
+          Create New Lobby
         </button>
 
         <div className="join-section">
@@ -121,10 +137,43 @@ function Home({ onJoinLobby }) {
             maxLength={6}
           />
           <button onClick={joinLobby} disabled={loading}>
-            Join Lobby
+            Join with Code
           </button>
         </div>
+
+        <button onClick={() => setShowLobbyList(!showLobbyList)} className="secondary">
+          {showLobbyList ? 'Hide Lobby List' : 'Browse Lobbies'}
+        </button>
       </div>
+
+      {showLobbyList && (
+        <div className="lobby-list">
+          <h2>Available Lobbies</h2>
+          {lobbyList.length === 0 ? (
+            <p className="no-lobbies">No lobbies available. Create one!</p>
+          ) : (
+            <div className="lobbies">
+              {lobbyList.map(lobby => (
+                <div key={lobby.code} className="lobby-item">
+                  <div className="lobby-info">
+                    <span className="lobby-code">{lobby.code}</span>
+                    <span className="lobby-host">Host: {lobby.hostName}</span>
+                    <span className="lobby-players">{lobby.playerCount} player{lobby.playerCount !== 1 ? 's' : ''}</span>
+                    <span className="lobby-gamemode">
+                      {lobby.gameType === 'imposter' ? '🕵️ Imposter' :
+                       lobby.gameType === 'connections' ? '🧩 Connections' :
+                       '🎮 Selecting gamemode'}
+                    </span>
+                  </div>
+                  <button onClick={() => quickJoinLobby(lobby.code)} className="join-button">
+                    Join
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {error && <div className="error">{error}</div>}
     </div>

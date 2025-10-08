@@ -36,13 +36,25 @@ function ConnectionsGame({ onEnd }) {
     });
 
     socket.on('cursor_update', (data) => {
-      if (data.playerId !== socket.id) {
+      // Validate data before updating state
+      if (data.playerId !== socket.id &&
+          typeof data.x === 'number' &&
+          typeof data.y === 'number' &&
+          typeof data.playerName === 'string') {
         setCursors(prev => new Map(prev).set(data.playerId, {
           x: data.x,
           y: data.y,
           name: data.playerName
         }));
       }
+    });
+
+    socket.on('cursor_remove', (data) => {
+      setCursors(prev => {
+        const newCursors = new Map(prev);
+        newCursors.delete(data.playerId);
+        return newCursors;
+      });
     });
 
     socket.on('selection_update', (data) => {
@@ -77,6 +89,7 @@ function ConnectionsGame({ onEnd }) {
     return () => {
       socket.off('connections_start');
       socket.off('cursor_update');
+      socket.off('cursor_remove');
       socket.off('selection_update');
       socket.off('category_solved');
       socket.off('mistake_made');
@@ -93,8 +106,12 @@ function ConnectionsGame({ onEnd }) {
     const handleMouseMove = (e) => {
       if (!throttleTimeout) {
         const rect = boardRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        let x = ((e.clientX - rect.left) / rect.width) * 100;
+        let y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        // Clamp coordinates to 0-100 range
+        x = Math.max(0, Math.min(100, x));
+        y = Math.max(0, Math.min(100, y));
 
         socket.emit('cursor_move', { x, y });
 
