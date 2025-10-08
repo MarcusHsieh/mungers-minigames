@@ -18,11 +18,13 @@ function ConnectionsGame({ onEnd }) {
   const [gameStatus, setGameStatus] = useState('playing'); // playing, won, lost
   const [allCategories, setAllCategories] = useState([]);
   const [message, setMessage] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!socket) return;
 
     socket.on('connections_start', (data) => {
+      console.log('Connections game started, received words:', data.words);
       setWords(data.words);
       setMaxMistakes(data.maxMistakes);
       setMistakeCount(0);
@@ -30,6 +32,7 @@ function ConnectionsGame({ onEnd }) {
       setMySelections(new Set());
       setOtherSelections(new Map());
       setGameStatus('playing');
+      setLoading(false);
     });
 
     socket.on('cursor_update', (data) => {
@@ -177,6 +180,18 @@ function ConnectionsGame({ onEnd }) {
         </div>
 
         <button onClick={onEnd}>Return to Home</button>
+      </div>
+    );
+  }
+
+  if (loading || words.length === 0) {
+    return (
+      <div className="card connections-game">
+        <h1 className="title">🧩 Connections</h1>
+        <div style={{ textAlign: 'center', padding: '40px', fontSize: '18px' }}>
+          <p>Loading puzzle...</p>
+          {!socket && <p style={{ marginTop: '10px', opacity: 0.7 }}>Connecting to server...</p>}
+        </div>
       </div>
     );
   }
