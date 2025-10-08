@@ -146,8 +146,11 @@ export class LobbyManager {
     const lobby = this.lobbies.get(lobbyCode);
 
     if (!lobby || lobby.host !== socket.id) {
+      console.log(`[startGame] Failed - lobby: ${!!lobby}, isHost: ${lobby?.host === socket.id}`);
       return;
     }
+
+    console.log(`[startGame] Starting game in lobby ${lobbyCode} with ${lobby.players.size} players`);
 
     // Update lobby settings with data from host
     if (data.settings) {
@@ -162,9 +165,11 @@ export class LobbyManager {
     // Give clients time to mount the game component, then start game
     setTimeout(() => {
       if (lobby.gameType === 'imposter') {
+        console.log(`[startGame] Creating Imposter game for lobby ${lobbyCode}`);
         lobby.game = new ImposterGame(this.io, lobby, this);
         lobby.game.start();
       } else if (lobby.gameType === 'connections') {
+        console.log(`[startGame] Creating Connections game for lobby ${lobbyCode}`);
         lobby.game = new ConnectionsGame(this.io, lobby, this);
         lobby.game.start();
       }
@@ -278,9 +283,17 @@ export class LobbyManager {
   }
 
   getStats() {
-    return {
+    const stats = {
       totalLobbies: this.lobbies.size,
-      activeGames: Array.from(this.lobbies.values()).filter(l => l.state === 'playing').length
+      activeGames: Array.from(this.lobbies.values()).filter(l => l.state === 'playing').length,
+      lobbies: Array.from(this.lobbies.entries()).map(([code, lobby]) => ({
+        code,
+        state: lobby.state,
+        gameType: lobby.gameType,
+        playerCount: lobby.players.size
+      }))
     };
+    console.log('[getStats]', JSON.stringify(stats, null, 2));
+    return stats;
   }
 }
