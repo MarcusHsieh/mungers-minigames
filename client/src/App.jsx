@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Home from './pages/Home';
 import Lobby from './pages/Lobby';
 import ImposterGame from './pages/ImposterGame';
 import ConnectionsGame from './pages/ConnectionsGame';
-import { SocketProvider } from './context/SocketContext';
+import { SocketProvider, useSocket } from './context/SocketContext';
 
-function App() {
+function AppContent() {
+  const { socket } = useSocket();
   const [screen, setScreen] = useState('home'); // home, lobby, imposter, connections
   const [lobbyData, setLobbyData] = useState(null);
 
@@ -28,16 +29,38 @@ function App() {
     setLobbyData(null);
   };
 
+  // Listen for lobby updates to keep lobbyData in sync
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('lobby_update', (updatedLobby) => {
+      // Only update lobbyData if we're in a lobby or game
+      if (screen !== 'home') {
+        setLobbyData(updatedLobby);
+      }
+    });
+
+    return () => {
+      socket.off('lobby_update');
+    };
+  }, [socket, screen]);
+
+  return (
+    <div className="container">
+      {screen === 'home' && <Home onJoinLobby={goToLobby} />}
+      {screen === 'lobby' && (
+        <Lobby lobbyData={lobbyData} onStartGame={startGame} onLeave={goHome} />
+      )}
+      {screen === 'imposter' && <ImposterGame onEnd={returnToLobby} />}
+      {screen === 'connections' && <ConnectionsGame onEnd={returnToLobby} lobbyData={lobbyData} />}
+    </div>
+  );
+}
+
+function App() {
   return (
     <SocketProvider>
-      <div className="container">
-        {screen === 'home' && <Home onJoinLobby={goToLobby} />}
-        {screen === 'lobby' && (
-          <Lobby lobbyData={lobbyData} onStartGame={startGame} onLeave={goHome} />
-        )}
-        {screen === 'imposter' && <ImposterGame onEnd={returnToLobby} />}
-        {screen === 'connections' && <ConnectionsGame onEnd={returnToLobby} lobbyData={lobbyData} />}
-      </div>
+      <AppContent />
     </SocketProvider>
   );
 }
