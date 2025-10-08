@@ -5,7 +5,9 @@ import './ConnectionsGame.css';
 const COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
 const DIFFICULTY_NAMES = ['Easy', 'Medium', 'Hard', 'Tricky'];
 
-function ConnectionsGame({ onEnd }) {
+const PLAYER_COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#ec4899', '#14b8a6', '#f97316'];
+
+function ConnectionsGame({ onEnd, lobbyData }) {
   const { socket } = useSocket();
   const boardRef = useRef(null);
   const [words, setWords] = useState([]);
@@ -22,9 +24,23 @@ function ConnectionsGame({ onEnd }) {
   const [allCategories, setAllCategories] = useState([]);
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [players, setPlayers] = useState([]);
+
+  // Initialize players from lobby data
+  useEffect(() => {
+    if (lobbyData?.players) {
+      setPlayers(lobbyData.players);
+    }
+  }, [lobbyData]);
 
   useEffect(() => {
     if (!socket) return;
+
+    socket.on('lobby_update', (data) => {
+      if (data.players) {
+        setPlayers(data.players);
+      }
+    });
 
     socket.on('connections_start', (data) => {
       console.log('Connections game started, received words:', data.words);
@@ -93,12 +109,18 @@ function ConnectionsGame({ onEnd }) {
       showMessage(`${data.usedBy} revealed a hint: ${data.categoryName}`, 'hint');
     });
 
+    socket.on('sync_hints', (data) => {
+      setHintsUsed(data.hintsUsed);
+      setRevealedHints(data.revealedHints || []);
+    });
+
     socket.on('connections_end', (data) => {
       setGameStatus(data.won ? 'won' : 'lost');
       setAllCategories(data.categories);
     });
 
     return () => {
+      socket.off('lobby_update');
       socket.off('connections_start');
       socket.off('cursor_update');
       socket.off('cursor_remove');
@@ -106,6 +128,7 @@ function ConnectionsGame({ onEnd }) {
       socket.off('category_solved');
       socket.off('mistake_made');
       socket.off('hint_revealed');
+      socket.off('sync_hints');
       socket.off('connections_end');
     };
   }, [socket]);
@@ -187,6 +210,38 @@ function ConnectionsGame({ onEnd }) {
   const useHint = () => {
     if (hintsUsed >= maxHints) return;
     socket.emit('use_hint');
+  };
+
+  const getPlayerIndex = (playerId) => {
+    return players.findIndex(p => p.id === playerId);
+  };
+
+  const getPlayerColor = (playerId) => {
+    const index = getPlayerIndex(playerId);
+    return index >= 0 ? PLAYER_COLORS[index % PLAYER_COLORS.length] : '#888';
+  };
+
+  const getPlayerNumber = (playerId) => {
+    const index = getPlayerIndex(playerId);
+    return index >= 0 ? index + 1 : '?';
+  };
+
+  const getPlayersWhoSelectedWord = (word) => {
+    const playerIds = [];
+
+    // Check if current player selected it
+    if (mySelections.has(word)) {
+      playerIds.push(socket.id);
+    }
+
+    // Check other players
+    for (const [playerId, selections] of otherSelections.entries()) {
+      if (selections.has(word)) {
+        playerIds.push(playerId);
+      }
+    }
+
+    return playerIds;
   };
 
   const isWordSelectedByOthers = (word) => {
@@ -296,16 +351,50 @@ function ConnectionsGame({ onEnd }) {
 
         {/* Word tiles */}
         <div className="words-grid">
-          {words.map((word, idx) => (
-            <button
-              key={idx}
-              className={`word-tile ${mySelections.has(word) ? 'selected-me' : ''} ${
-                isWordSelectedByOthers(word) ? 'selected-other' : ''
-              }`}
-              onClick={() => toggleWord(word)}
-            >
-              {word}
-            </button>
+          {words.map((word, idx) => {
+            const selectedByPlayers = getPlayersWhoSelectedWord(word);
+            return (
+              <button
+                key={idx}
+                className={`word-tile ${mySelections.has(word) ? 'selected-me' : ''} ${
+                  isWordSelectedByOthers(word) ? 'selected-other' : ''
+                }`}
+                onClick={() => toggleWord(word)}
+              >
+                {word}
+                {selectedByPlayers.length > 0 && (
+                  <div className="player-indicators">
+                    {selectedByPlayers.map(playerId => (
+                      <span
+                        key={playerId}
+                        className="player-number"
+                        style={{ backgroundColor: getPlayerColor(playerId) }}
+                      >
+                        {getPlayerNumber(playerId)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Player sidebar */}
+      <div className="players-sidebar">
+        <h3>Players</h3>
+        <div className="players-list-game">
+          {players.map((player, idx) => (
+            <div key={player.id} className="player-item">
+              <span
+                className="player-color-indicator"
+                style={{ backgroundColor: PLAYER_COLORS[idx % PLAYER_COLORS.length] }}
+              >
+                {idx + 1}
+              </span>
+              <span className="player-name">{player.name}</span>
+            </div>
           ))}
         </div>
       </div>

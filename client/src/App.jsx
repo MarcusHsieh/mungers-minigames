@@ -36,7 +36,7 @@ function App() {
           <Lobby lobbyData={lobbyData} onStartGame={startGame} onLeave={goHome} />
         )}
         {screen === 'imposter' && <ImposterGame onEnd={returnToLobby} />}
-        {screen === 'connections' && <ConnectionsGame onEnd={returnToLobby} />}
+        {screen === 'connections' && <ConnectionsGame onEnd={returnToLobby} lobbyData={lobbyData} />}
       </div>
     </SocketProvider>
   );

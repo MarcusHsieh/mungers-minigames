@@ -24,6 +24,7 @@ export class ConnectionsGame {
     this.maxMistakes = this.isMegaMode ? 8 : 4; // Double mistakes for mega mode
     this.hintsUsed = 0;
     this.maxHints = this.isMegaMode ? 4 : 2; // More hints for mega mode
+    this.revealedHints = []; // Track which category names were revealed as hints
     this.playerCursors = new Map(); // playerId -> { x, y }
     this.playerSelections = new Map(); // playerId -> Set of words
     this.phase = 'playing'; // playing, won, lost
@@ -241,11 +242,23 @@ export class ConnectionsGame {
     });
 
     // Send already solved categories
-    for (const category of this.solvedCategories) {
-      this.io.to(playerId).emit('category_solved', {
-        category,
-        solvedBy: 'Previous players',
-        playerId: 'system'
+    for (const categoryName of this.solvedCategories) {
+      const category = this.categories.find(c => c.name === categoryName);
+      if (category) {
+        this.io.to(playerId).emit('category_solved', {
+          category,
+          solvedBy: 'Previous players',
+          playerId: 'system'
+        });
+      }
+    }
+
+    // Send current hint count and any revealed hints
+    if (this.revealedHints.length > 0) {
+      this.io.to(playerId).emit('sync_hints', {
+        hintsUsed: this.hintsUsed,
+        maxHints: this.maxHints,
+        revealedHints: this.revealedHints
       });
     }
 
@@ -269,9 +282,9 @@ export class ConnectionsGame {
 
     const player = this.lobby.players.get(playerId);
 
-    // Find an unsolved category
+    // Find an unsolved category that hasn't been revealed as a hint
     const unsolvedCategories = this.categories.filter(
-      cat => !this.solvedCategories.includes(cat.name)
+      cat => !this.solvedCategories.includes(cat.name) && !this.revealedHints.includes(cat.name)
     );
 
     if (unsolvedCategories.length === 0) return;
@@ -281,6 +294,7 @@ export class ConnectionsGame {
     const hintCategory = unsolvedCategories[categoryIndex];
 
     this.hintsUsed++;
+    this.revealedHints.push(hintCategory.name);
 
     // Send hint to all players
     this.io.to(this.lobbyCode).emit('hint_revealed', {
