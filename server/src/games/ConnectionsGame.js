@@ -32,12 +32,16 @@ export class ConnectionsGame {
     // Load and merge puzzles
     this.loadPuzzles();
 
+    console.log(`Loaded ${this.words.length} words for Connections game`);
+
     // Send initial game state
     this.io.to(this.lobbyCode).emit('connections_start', {
       words: this.words,
       maxMistakes: this.maxMistakes,
       isMegaMode: this.isMegaMode
     });
+
+    console.log(`Emitted connections_start to lobby ${this.lobbyCode}`);
   }
 
   loadPuzzles() {

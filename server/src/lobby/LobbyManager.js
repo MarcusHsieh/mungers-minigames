@@ -105,15 +105,19 @@ export class LobbyManager {
 
     lobby.state = 'playing';
 
-    if (lobby.gameType === 'imposter') {
-      lobby.game = new ImposterGame(this.io, lobby);
-      lobby.game.start();
-    } else if (lobby.gameType === 'connections') {
-      lobby.game = new ConnectionsGame(this.io, lobby);
-      lobby.game.start();
-    }
-
+    // Broadcast lobby update first so clients transition screens
     this.broadcastLobbyUpdate(lobbyCode);
+
+    // Give clients time to mount the game component, then start game
+    setTimeout(() => {
+      if (lobby.gameType === 'imposter') {
+        lobby.game = new ImposterGame(this.io, lobby);
+        lobby.game.start();
+      } else if (lobby.gameType === 'connections') {
+        lobby.game = new ConnectionsGame(this.io, lobby);
+        lobby.game.start();
+      }
+    }, 100);
   }
 
   // Imposter game handlers
