@@ -43,7 +43,8 @@ export class ConnectionsGame {
       words: this.words,
       maxMistakes: this.maxMistakes,
       maxHints: this.maxHints,
-      isMegaMode: this.isMegaMode
+      isMegaMode: this.isMegaMode,
+      players: Array.from(this.lobby.players.values())
     });
 
     console.log(`Emitted connections_start to lobby ${this.lobbyCode}`);
@@ -238,7 +239,8 @@ export class ConnectionsGame {
       words: this.words,
       maxMistakes: this.maxMistakes,
       maxHints: this.maxHints,
-      isMegaMode: this.isMegaMode
+      isMegaMode: this.isMegaMode,
+      players: Array.from(this.lobby.players.values())
     });
 
     // Send already solved categories

@@ -55,6 +55,11 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       setOtherSelections(new Map());
       setGameStatus('playing');
       setLoading(false);
+
+      // Update player list from authoritative server data
+      if (data.players) {
+        setPlayers(data.players);
+      }
     });
 
     socket.on('cursor_update', (data) => {
