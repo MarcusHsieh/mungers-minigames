@@ -10,7 +10,8 @@ function ImposterGame({ onEnd }) {
     phase: 'waiting', // waiting, turn, voting, roundEnd, gameEnd
     currentPlayer: null,
     round: 0,
-    totalRounds: 0
+    totalRounds: 0,
+    isSpectator: false
   });
   const [submittedWords, setSubmittedWords] = useState([]);
   const [wordInput, setWordInput] = useState('');
@@ -29,7 +30,8 @@ function ImposterGame({ onEnd }) {
         phase: 'waiting',
         currentPlayer: null,
         round: 0,
-        totalRounds: 0
+        totalRounds: 0,
+        isSpectator: data.isSpectator || false
       });
     });
 
@@ -144,22 +146,30 @@ function ImposterGame({ onEnd }) {
   return (
     <div className="card imposter-game">
       <div className="game-header">
-        <div className="role-badge" data-role={gameState.role}>
-          {gameState.role === 'imposter' ? '🕵️ Imposter' : '😇 Innocent'}
+        <div className="role-badge" data-role={gameState.isSpectator ? 'spectator' : gameState.role}>
+          {gameState.isSpectator ? '👁️ Spectator' :
+           gameState.role === 'imposter' ? '🕵️ Imposter' : '😇 Innocent'}
         </div>
         <div className="round-info">
           Round {gameState.round} / {gameState.totalRounds}
         </div>
       </div>
 
-      {gameState.word && (
+      {gameState.isSpectator && (
+        <div className="spectator-notice">
+          <p>👁️ You joined as a spectator</p>
+          <p className="subtitle">You'll be able to play in the next game!</p>
+        </div>
+      )}
+
+      {gameState.word && !gameState.isSpectator && (
         <div className="word-display">
           <span>Your word:</span>
           <strong>{gameState.word}</strong>
         </div>
       )}
 
-      {gameState.phase === 'turn' && (
+      {gameState.phase === 'turn' && !gameState.isSpectator && (
         <div className="turn-phase">
           <div className="timer">{timeRemaining}s</div>
           <h2>
@@ -184,6 +194,13 @@ function ImposterGame({ onEnd }) {
         </div>
       )}
 
+      {gameState.phase === 'turn' && gameState.isSpectator && (
+        <div className="spectator-view">
+          <div className="timer">{timeRemaining}s</div>
+          <p>Watching: {gameState.currentPlayer}'s turn</p>
+        </div>
+      )}
+
       {submittedWords.length > 0 && (
         <div className="submitted-words">
           <h3>Submitted Words:</h3>
@@ -198,7 +215,7 @@ function ImposterGame({ onEnd }) {
         </div>
       )}
 
-      {gameState.phase === 'voting' && (
+      {gameState.phase === 'voting' && !gameState.isSpectator && (
         <div className="voting-phase">
           <div className="timer">{timeRemaining}s</div>
           <h2>Vote for who you think is the Imposter:</h2>
@@ -215,6 +232,14 @@ function ImposterGame({ onEnd }) {
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {gameState.phase === 'voting' && gameState.isSpectator && (
+        <div className="spectator-view">
+          <div className="timer">{timeRemaining}s</div>
+          <h2>Voting Phase</h2>
+          <p>Players are voting for the imposter...</p>
         </div>
       )}
 

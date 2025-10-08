@@ -43,16 +43,24 @@ export class LobbyManager {
       return callback({ success: false, error: 'Lobby not found' });
     }
 
-    if (lobby.state === 'playing' && lobby.gameType === 'imposter') {
-      return callback({ success: false, error: 'Game already in progress' });
-    }
+    // Allow joining even during games - spectator mode for Imposter, active play for Connections
+    const isSpectator = lobby.state === 'playing' && lobby.gameType === 'imposter';
 
-    // For Connections, allow join anytime
-    lobby.players.set(socket.id, { id: socket.id, name: playerName, isHost: false });
+    lobby.players.set(socket.id, {
+      id: socket.id,
+      name: playerName,
+      isHost: false,
+      isSpectator: isSpectator
+    });
     this.socketToLobby.set(socket.id, lobbyCode);
     socket.join(lobbyCode);
 
-    console.log(`Player ${playerName} joined lobby ${lobbyCode}`);
+    console.log(`Player ${playerName} joined lobby ${lobbyCode}${isSpectator ? ' as spectator' : ''}`);
+
+    // If joining Connections mid-game, notify game instance
+    if (lobby.state === 'playing' && lobby.gameType === 'connections' && lobby.game) {
+      lobby.game.addPlayer(socket.id);
+    }
 
     callback({ success: true, lobby: this.getLobbyInfo(lobby) });
     this.broadcastLobbyUpdate(lobbyCode);
@@ -240,16 +248,14 @@ export class LobbyManager {
     const publicLobbies = [];
 
     for (const [code, lobby] of this.lobbies.entries()) {
-      // Only show lobbies in 'selecting' or 'waiting' state (not in active games)
-      if (lobby.state === 'selecting' || lobby.state === 'waiting') {
-        publicLobbies.push({
-          code: lobby.code,
-          playerCount: lobby.players.size,
-          state: lobby.state,
-          gameType: lobby.gameType,
-          hostName: lobby.players.get(lobby.host)?.name || 'Unknown'
-        });
-      }
+      // Show all lobbies (including in-progress games for mid-game joining)
+      publicLobbies.push({
+        code: lobby.code,
+        playerCount: lobby.players.size,
+        state: lobby.state,
+        gameType: lobby.gameType,
+        hostName: lobby.players.get(lobby.host)?.name || 'Unknown'
+      });
     }
 
     return publicLobbies;

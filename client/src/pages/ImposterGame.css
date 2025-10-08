@@ -29,6 +29,42 @@
   border: 2px solid #22c55e;
 }
 
+.role-badge[data-role="spectator"] {
+  background: rgba(138, 139, 223, 0.15);
+  border: 2px solid #6366f1;
+}
+
+.spectator-notice {
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid #6366f1;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.spectator-notice p {
+  margin: 8px 0;
+}
+
+.spectator-notice .subtitle {
+  opacity: 0.8;
+  font-size: 14px;
+}
+
+.spectator-view {
+  background: rgba(138, 139, 223, 0.1);
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.spectator-view .timer {
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+
 .round-info {
   font-size: 18px;
   opacity: 0.9;

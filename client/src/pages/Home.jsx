@@ -160,9 +160,13 @@ function Home({ onJoinLobby }) {
                     <span className="lobby-host">Host: {lobby.hostName}</span>
                     <span className="lobby-players">{lobby.playerCount} player{lobby.playerCount !== 1 ? 's' : ''}</span>
                     <span className="lobby-gamemode">
-                      {lobby.gameType === 'imposter' ? '🕵️ Imposter' :
-                       lobby.gameType === 'connections' ? '🧩 Connections' :
-                       '🎮 Selecting gamemode'}
+                      {lobby.state === 'playing' ? (
+                        <span className="in-game">
+                          🎮 In-game: {lobby.gameType === 'imposter' ? 'Imposter (spectate)' : 'Connections (join)'}
+                        </span>
+                      ) : lobby.gameType === 'imposter' ? '🕵️ Imposter' :
+                        lobby.gameType === 'connections' ? '🧩 Connections' :
+                        '🎮 Selecting gamemode'}
                     </span>
                   </div>
                   <button onClick={() => quickJoinLobby(lobby.code)} className="join-button">

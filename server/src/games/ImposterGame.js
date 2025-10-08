@@ -81,12 +81,14 @@ export class ImposterGame {
 
   sendRoleInfo() {
     for (const [playerId, player] of this.lobby.players) {
+      const isSpectator = player.isSpectator;
       const isImposter = this.imposters.has(playerId);
 
       this.io.to(playerId).emit('game_start', {
-        role: isImposter ? 'imposter' : 'innocent',
-        word: isImposter ? (this.settings.giveHintWord ? this.hintWord : null) : this.targetWord,
-        imposterCount: this.settings.imposterCount
+        role: isSpectator ? 'spectator' : (isImposter ? 'imposter' : 'innocent'),
+        word: isSpectator ? null : (isImposter ? (this.settings.giveHintWord ? this.hintWord : null) : this.targetWord),
+        imposterCount: this.settings.imposterCount,
+        isSpectator: isSpectator
       });
     }
   }
@@ -98,9 +100,10 @@ export class ImposterGame {
     this.votes.clear();
     this.phase = 'turn';
 
-    // Create turn order (exclude eliminated players)
-    this.turnOrder = Array.from(this.lobby.players.keys())
-      .filter(id => !this.eliminatedPlayers.has(id))
+    // Create turn order (exclude eliminated players and spectators)
+    this.turnOrder = Array.from(this.lobby.players.entries())
+      .filter(([id, player]) => !this.eliminatedPlayers.has(id) && !player.isSpectator)
+      .map(([id]) => id)
       .sort(() => Math.random() - 0.5);
 
     this.io.to(this.lobbyCode).emit('round_start', {
@@ -176,13 +179,16 @@ export class ImposterGame {
   }
 
   castVote(playerId, targetId) {
-    if (this.phase !== 'voting' || this.eliminatedPlayers.has(playerId)) {
+    const player = this.lobby.players.get(playerId);
+
+    // Spectators and eliminated players cannot vote
+    if (this.phase !== 'voting' || this.eliminatedPlayers.has(playerId) || player?.isSpectator) {
       return;
     }
 
     this.votes.set(playerId, targetId);
 
-    // Check if all players voted
+    // Check if all active (non-spectator, non-eliminated) players voted
     const activePlayers = this.turnOrder.filter(id => !this.eliminatedPlayers.has(id));
     if (this.votes.size >= activePlayers.length) {
       clearTimeout(this.votingTimer);
@@ -287,6 +293,11 @@ export class ImposterGame {
       // Check if lobby still exists
       if (!this.lobbyManager.lobbies.has(this.lobbyCode)) {
         return;
+      }
+
+      // Clear spectator flags for all players
+      for (const [playerId, player] of this.lobby.players) {
+        player.isSpectator = false;
       }
 
       this.lobby.state = 'selecting';

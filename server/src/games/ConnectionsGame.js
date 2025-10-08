@@ -224,6 +224,40 @@ export class ConnectionsGame {
     }, 5000);
   }
 
+  addPlayer(playerId) {
+    // Initialize state for new player joining mid-game
+    this.playerCursors.set(playerId, { x: 50, y: 50 });
+    this.playerSelections.set(playerId, new Set());
+
+    // Send current game state to new player
+    this.io.to(playerId).emit('connections_start', {
+      words: this.words,
+      maxMistakes: this.maxMistakes,
+      isMegaMode: this.isMegaMode
+    });
+
+    // Send already solved categories
+    for (const category of this.solvedCategories) {
+      this.io.to(playerId).emit('category_solved', {
+        category,
+        solvedBy: 'Previous players',
+        playerId: 'system'
+      });
+    }
+
+    // Send current mistake count
+    if (this.mistakeCount > 0) {
+      this.io.to(playerId).emit('mistake_made', {
+        playerId: 'system',
+        playerName: 'System',
+        mistakeCount: this.mistakeCount,
+        maxMistakes: this.maxMistakes
+      });
+    }
+
+    console.log(`Player ${playerId} joined Connections game mid-session`);
+  }
+
   removePlayer(playerId) {
     // Clean up player's cursor and selections
     this.playerCursors.delete(playerId);
