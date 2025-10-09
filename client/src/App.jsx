@@ -51,7 +51,7 @@ function AppContent() {
       {screen === 'lobby' && (
         <Lobby lobbyData={lobbyData} onStartGame={startGame} onLeave={goHome} />
       )}
-      {screen === 'imposter' && <ImposterGame onEnd={returnToLobby} />}
+      {screen === 'imposter' && <ImposterGame onEnd={returnToLobby} lobbyData={lobbyData} />}
       {screen === 'connections' && <ConnectionsGame onEnd={returnToLobby} lobbyData={lobbyData} />}
     </div>
   );

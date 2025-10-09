@@ -427,7 +427,10 @@ function ConnectionsGame({ onEnd, lobbyData }) {
                 {idx + 1}
               </span>
               <div className="player-info">
-                <span className="player-name">{player.name}</span>
+                <span className="player-name">
+                  {player.name}
+                  {player.id === socket.id && <span className="player-you"> (You)</span>}
+                </span>
                 <span className="player-score">{playerScores.get(player.id) || 0} pts</span>
               </div>
             </div>

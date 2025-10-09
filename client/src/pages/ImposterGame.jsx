@@ -2,14 +2,15 @@ import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import './ImposterGame.css';
 
-function ImposterGame({ onEnd }) {
+function ImposterGame({ onEnd, lobbyData }) {
   const { socket } = useSocket();
   const gameAreaRef = useRef(null);
   const [gameState, setGameState] = useState({
     role: null,
     word: null,
     phase: 'waiting', // waiting, turn, voting, roundEnd, gameEnd
-    currentPlayer: null,
+    currentPlayerId: null,
+    currentPlayerName: null,
     round: 0,
     totalRounds: 0,
     isSpectator: false
@@ -21,20 +22,40 @@ function ImposterGame({ onEnd }) {
   const [voteResults, setVoteResults] = useState(null);
   const [gameEndInfo, setGameEndInfo] = useState(null);
   const [cursors, setCursors] = useState(new Map());
+  const [players, setPlayers] = useState([]);
+
+  // Initialize players from lobby data
+  useEffect(() => {
+    if (lobbyData?.players) {
+      setPlayers(lobbyData.players);
+    }
+  }, [lobbyData]);
 
   useEffect(() => {
     if (!socket) return;
+
+    socket.on('lobby_update', (data) => {
+      if (data.players) {
+        setPlayers(data.players);
+      }
+    });
 
     socket.on('game_start', (data) => {
       setGameState({
         role: data.role,
         word: data.word,
         phase: 'waiting',
-        currentPlayer: null,
+        currentPlayerId: null,
+        currentPlayerName: null,
         round: 0,
         totalRounds: 0,
         isSpectator: data.isSpectator || false
       });
+
+      // Update player list from authoritative server data
+      if (data.players) {
+        setPlayers(data.players);
+      }
     });
 
     socket.on('round_start', (data) => {
@@ -52,7 +73,8 @@ function ImposterGame({ onEnd }) {
       setGameState(prev => ({
         ...prev,
         phase: 'turn',
-        currentPlayer: data.playerName
+        currentPlayerId: data.playerId,
+        currentPlayerName: data.playerName
       }));
       setTimeRemaining(data.timeLimit);
     });
@@ -101,6 +123,7 @@ function ImposterGame({ onEnd }) {
     });
 
     return () => {
+      socket.off('lobby_update');
       socket.off('game_start');
       socket.off('round_start');
       socket.off('turn_start');
@@ -164,7 +187,7 @@ function ImposterGame({ onEnd }) {
     socket.emit('cast_vote', { targetId });
   };
 
-  const isMyTurn = gameState.currentPlayer && socket.id === gameState.currentPlayer;
+  const isMyTurn = gameState.currentPlayerId && socket.id === gameState.currentPlayerId;
 
   if (gameState.phase === 'gameEnd' && gameEndInfo) {
     return (
@@ -242,11 +265,29 @@ function ImposterGame({ onEnd }) {
         </div>
       )}
 
+      {/* Player sidebar */}
+      <div className="players-sidebar">
+        <h3>Players</h3>
+        <div className="players-list-game">
+          {players.map((player) => (
+            <div key={player.id} className="player-item">
+              <div className="player-info">
+                <span className="player-name">
+                  {player.name}
+                  {player.id === socket.id && <span className="player-you"> (You)</span>}
+                </span>
+                {player.isSpectator && <span className="player-status spectator">Spectator</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {gameState.phase === 'turn' && !gameState.isSpectator && (
         <div className="turn-phase">
           <div className="timer">{timeRemaining}s</div>
           <h2>
-            {isMyTurn ? "Your turn! Submit a word:" : `Waiting for ${gameState.currentPlayer}...`}
+            {isMyTurn ? "Your turn! Submit a word:" : `Waiting for ${gameState.currentPlayerName}...`}
           </h2>
           {isMyTurn && (
             <div className="word-input">
@@ -270,7 +311,7 @@ function ImposterGame({ onEnd }) {
       {gameState.phase === 'turn' && gameState.isSpectator && (
         <div className="spectator-view">
           <div className="timer">{timeRemaining}s</div>
-          <p>Watching: {gameState.currentPlayer}'s turn</p>
+          <p>Watching: {gameState.currentPlayerName}'s turn</p>
         </div>
       )}
 

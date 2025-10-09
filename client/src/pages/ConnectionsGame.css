@@ -310,6 +310,12 @@
   font-weight: 600;
 }
 
+.player-you {
+  color: #fbbf24;
+  font-weight: 600;
+  font-size: 12px;
+}
+
 .controls {
   display: flex;
   gap: 12px;

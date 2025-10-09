@@ -88,7 +88,8 @@ export class ImposterGame {
         role: isSpectator ? 'spectator' : (isImposter ? 'imposter' : 'innocent'),
         word: isSpectator ? null : (isImposter ? (this.settings.giveHintWord ? this.hintWord : null) : this.targetWord),
         imposterCount: this.settings.imposterCount,
-        isSpectator: isSpectator
+        isSpectator: isSpectator,
+        players: Array.from(this.lobby.players.values())
       });
     }
   }
