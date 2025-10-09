@@ -109,7 +109,8 @@ function ImposterGame({ onEnd, lobbyData }) {
         setCursors(prev => new Map(prev).set(data.playerId, {
           x: data.x,
           y: data.y,
-          name: data.playerName
+          name: data.playerName,
+          color: data.playerColor || '#888'
         }));
       }
     });
@@ -225,7 +226,15 @@ function ImposterGame({ onEnd, lobbyData }) {
   }
 
   return (
-    <div className="card imposter-game" ref={gameAreaRef}>
+    <div
+      className="card imposter-game"
+      ref={gameAreaRef}
+      style={{
+        cursor: players.find(p => p.id === socket?.id)?.color
+          ? `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text y="20" font-size="20" fill="${encodeURIComponent(players.find(p => p.id === socket?.id)?.color || '#888')}">▲</text></svg>') 12 12, auto`
+          : 'auto'
+      }}
+    >
       {/* Render other players' cursors */}
       {Array.from(cursors.entries()).map(([playerId, cursor]) => (
         <div
@@ -236,8 +245,8 @@ function ImposterGame({ onEnd, lobbyData }) {
             top: `${cursor.y}%`
           }}
         >
-          <div className="cursor-pointer">▲</div>
-          <div className="cursor-name">{cursor.name}</div>
+          <div className="cursor-pointer" style={{ color: cursor.color }}>▲</div>
+          <div className="cursor-name" style={{ color: cursor.color, borderColor: cursor.color }}>{cursor.name}</div>
         </div>
       ))}
 
@@ -271,6 +280,10 @@ function ImposterGame({ onEnd, lobbyData }) {
         <div className="players-list-game">
           {players.map((player) => (
             <div key={player.id} className="player-item">
+              <span
+                className="player-color-dot"
+                style={{ backgroundColor: player.color || '#888' }}
+              />
               <div className="player-info">
                 <span className="player-name">
                   {player.name}

@@ -322,6 +322,7 @@ export class ImposterGame {
     socket.broadcast.to(this.lobbyCode).emit('imposter_cursor_update', {
       playerId: socket.id,
       playerName: player.name,
+      playerColor: player.color || '#888',
       x,
       y
     });

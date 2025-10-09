@@ -28,6 +28,48 @@
   letter-spacing: 4px;
 }
 
+.color-selector-section {
+  margin-bottom: 24px;
+  background: rgba(138, 139, 223, 0.08);
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(138, 139, 223, 0.15);
+}
+
+.color-selector-section h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  opacity: 0.9;
+  font-weight: 600;
+}
+
+.color-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.color-option {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.color-option.selected {
+  border-color: #E7CFCD;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
 .players-section {
   margin-bottom: 24px;
 }
@@ -52,6 +94,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   border: 1px solid rgba(138, 139, 223, 0.1);
   transition: all 0.2s;
 }
@@ -59,6 +102,14 @@
 .player:hover {
   background: rgba(138, 139, 223, 0.2);
   border-color: rgba(138, 139, 223, 0.3);
+}
+
+.player-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .host-badge {

@@ -120,6 +120,7 @@ export class ConnectionsGame {
     socket.broadcast.to(this.lobbyCode).emit('cursor_update', {
       playerId: socket.id,
       playerName: player.name,
+      playerColor: player.color || '#888',
       x,
       y
     });

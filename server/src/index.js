@@ -98,6 +98,10 @@ io.on('connection', (socket) => {
     lobbyManager.handleConnectionsShuffle(socket);
   });
 
+  socket.on('update_player_color', (data) => {
+    lobbyManager.updatePlayerColor(socket, data);
+  });
+
   // Disconnection
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);

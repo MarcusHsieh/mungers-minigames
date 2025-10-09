@@ -19,7 +19,7 @@ export class LobbyManager {
       code: lobbyCode,
       gameType: gameType || null, // null until selected, or use provided gameType for compatibility
       host: socket.id,
-      players: new Map([[socket.id, { id: socket.id, name: playerName, isHost: true }]]),
+      players: new Map([[socket.id, { id: socket.id, name: playerName, isHost: true, color: '#f59e0b' }]]),
       settings: settings || {},
       game: null,
       state: gameType ? 'waiting' : 'selecting' // 'selecting' if no gameType provided, 'waiting' otherwise
@@ -46,11 +46,16 @@ export class LobbyManager {
     // Allow joining even during games - spectator mode for Imposter, active play for Connections
     const isSpectator = lobby.state === 'playing' && lobby.gameType === 'imposter';
 
+    // Assign a random default color
+    const defaultColors = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#ec4899', '#14b8a6', '#f97316'];
+    const randomColor = defaultColors[Math.floor(Math.random() * defaultColors.length)];
+
     lobby.players.set(socket.id, {
       id: socket.id,
       name: playerName,
       isHost: false,
-      isSpectator: isSpectator
+      isSpectator: isSpectator,
+      color: randomColor
     });
     this.socketToLobby.set(socket.id, lobbyCode);
     socket.join(lobbyCode);
@@ -226,6 +231,7 @@ export class LobbyManager {
     socket.broadcast.to(lobby.code).emit('lobby_cursor_update', {
       playerId: socket.id,
       playerName: player.name,
+      playerColor: player.color || '#888',
       x,
       y
     });
@@ -257,6 +263,22 @@ export class LobbyManager {
     if (lobby?.game instanceof ConnectionsGame) {
       lobby.game.shuffleWords(socket.id);
     }
+  }
+
+  updatePlayerColor(socket, data) {
+    const lobby = this.getLobbyForSocket(socket.id);
+    if (!lobby) return;
+
+    const player = lobby.players.get(socket.id);
+    if (!player) return;
+
+    // Update player color
+    player.color = data.color;
+
+    // Broadcast updated lobby info to all players
+    this.broadcastLobbyUpdate(lobby.code);
+
+    console.log(`Player ${player.name} changed color to ${data.color} in lobby ${lobby.code}`);
   }
 
   // Helper methods

@@ -2,12 +2,24 @@ import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import './Lobby.css';
 
+const AVAILABLE_COLORS = [
+  { name: 'Orange', value: '#f59e0b' },
+  { name: 'Green', value: '#10b981' },
+  { name: 'Blue', value: '#3b82f6' },
+  { name: 'Purple', value: '#8b5cf6' },
+  { name: 'Red', value: '#ef4444' },
+  { name: 'Pink', value: '#ec4899' },
+  { name: 'Teal', value: '#14b8a6' },
+  { name: 'Amber', value: '#f97316' }
+];
+
 function Lobby({ lobbyData, onStartGame, onLeave }) {
   const { socket } = useSocket();
   const [lobby, setLobby] = useState(lobbyData);
   const [isHost, setIsHost] = useState(false);
   const [lobbyCursors, setLobbyCursors] = useState(new Map());
   const lobbyAreaRef = useRef(null);
+  const [selectedColor, setSelectedColor] = useState(AVAILABLE_COLORS[0].value);
   const [settings, setSettings] = useState({
     imposterCount: 1,
     turnTimeLimit: 30,
@@ -21,10 +33,16 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
     puzzleCount: 1
   });
 
-  // Initialize isHost on mount
+  // Initialize isHost and color on mount
   useEffect(() => {
     if (socket && lobbyData) {
       setIsHost(socket.id === lobbyData.host);
+
+      // Set color from player data if available
+      const currentPlayer = lobbyData.players?.find(p => p.id === socket.id);
+      if (currentPlayer?.color) {
+        setSelectedColor(currentPlayer.color);
+      }
     }
   }, [socket, lobbyData]);
 
@@ -63,7 +81,8 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
         setLobbyCursors(prev => new Map(prev).set(data.playerId, {
           x: data.x,
           y: data.y,
-          name: data.playerName
+          name: data.playerName,
+          color: data.playerColor || '#888'
         }));
       }
     });
@@ -127,6 +146,13 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleColorChange = (color) => {
+    setSelectedColor(color);
+    if (socket) {
+      socket.emit('update_player_color', { color });
+    }
+  };
+
   const handleLeave = () => {
     socket.emit('leave_lobby');
     onLeave();
@@ -146,7 +172,7 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
   const canStart = lobby.players.length >= minPlayers && isHost;
 
   return (
-    <div className="card lobby" ref={lobbyAreaRef}>
+    <div className="card lobby" ref={lobbyAreaRef} style={{ cursor: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text y="20" font-size="20" fill="${encodeURIComponent(selectedColor)}">▲</text></svg>') 12 12, auto` }}>
       {/* Render other players' cursors */}
       {Array.from(lobbyCursors.entries()).map(([playerId, cursor]) => (
         <div
@@ -157,8 +183,8 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
             top: `${cursor.y}%`
           }}
         >
-          <div className="cursor-pointer">▲</div>
-          <div className="cursor-name">{cursor.name}</div>
+          <div className="cursor-pointer" style={{ color: cursor.color }}>▲</div>
+          <div className="cursor-name" style={{ color: cursor.color, borderColor: cursor.color }}>{cursor.name}</div>
         </div>
       ))}
 
@@ -173,11 +199,30 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
         </div>
       </div>
 
+      <div className="color-selector-section">
+        <h3>Your Color</h3>
+        <div className="color-options">
+          {AVAILABLE_COLORS.map((color) => (
+            <button
+              key={color.value}
+              className={`color-option ${selectedColor === color.value ? 'selected' : ''}`}
+              style={{ backgroundColor: color.value }}
+              onClick={() => handleColorChange(color.value)}
+              title={color.name}
+            />
+          ))}
+        </div>
+      </div>
+
       <div className="players-section">
         <h2>Players ({lobby.players.length})</h2>
         <div className="players-list">
           {lobby.players.map((player) => (
             <div key={player.id} className="player">
+              <span
+                className="player-color-dot"
+                style={{ backgroundColor: player.color || '#888' }}
+              />
               <span>{player.name}</span>
               {player.isHost && <span className="host-badge">Host</span>}
             </div>
