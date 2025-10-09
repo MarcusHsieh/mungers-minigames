@@ -45,7 +45,6 @@ function ConnectionsGame({ onEnd, lobbyData }) {
     });
 
     socket.on('connections_start', (data) => {
-      console.log('Connections game started, received words:', data.words);
       setWords(data.words);
       setMaxMistakes(data.maxMistakes);
       setMaxHints(data.maxHints || 2);
@@ -321,7 +320,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
   }
 
   return (
-    <div className={`card connections-game ${gameStatus === 'playing' ? 'playing' : ''}`}>
+    <div className={`card connections-game ${gameStatus === 'playing' ? 'playing' : ''}`} ref={boardRef}>
       <div className="game-header">
         <h1 className="title">🧩 Connections</h1>
         <div className="game-stats">
@@ -367,7 +366,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
         ))}
       </div>
 
-      <div className="board" ref={boardRef}>
+      <div className="board">
         {/* Render other players' cursors */}
         {Array.from(cursors.entries()).map(([playerId, cursor]) => (
           <div
