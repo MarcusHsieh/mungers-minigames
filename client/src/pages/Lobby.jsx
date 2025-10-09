@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { updateCursorColor } from '../utils/cursor';
+import Dropdown from '../components/Dropdown';
 import './Lobby.css';
 
 const AVAILABLE_COLORS = [
@@ -284,60 +285,61 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
               <div className="setting">
                 <label>
                   Number of Imposters:
-                  <select
+                  <Dropdown
                     value={settings.imposterCount}
-                    onChange={(e) => updateSetting('imposterCount', parseInt(e.target.value))}
-                  >
-                    {[1, 2, 3].map(n => (
-                      <option key={n} value={n} disabled={n >= lobby.players.length}>
-                        {n} {n >= lobby.players.length ? '(need more players)' : ''}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => updateSetting('imposterCount', value)}
+                    options={[1, 2, 3].map(n => ({
+                      value: n,
+                      label: `${n} ${n >= lobby.players.length ? '(need more players)' : ''}`,
+                      disabled: n >= lobby.players.length
+                    }))}
+                  />
                 </label>
               </div>
 
               <div className="setting">
                 <label>
                   Turn Time Limit:
-                  <select
+                  <Dropdown
                     value={settings.turnTimeLimit}
-                    onChange={(e) => updateSetting('turnTimeLimit', parseInt(e.target.value))}
-                  >
-                    <option value={15}>15 seconds</option>
-                    <option value={30}>30 seconds</option>
-                    <option value={45}>45 seconds</option>
-                    <option value={60}>60 seconds</option>
-                  </select>
+                    onChange={(value) => updateSetting('turnTimeLimit', value)}
+                    options={[
+                      { value: 15, label: '15 seconds' },
+                      { value: 30, label: '30 seconds' },
+                      { value: 45, label: '45 seconds' },
+                      { value: 60, label: '60 seconds' }
+                    ]}
+                  />
                 </label>
               </div>
 
               <div className="setting">
                 <label>
                   Voting Time Limit:
-                  <select
+                  <Dropdown
                     value={settings.votingTimeLimit}
-                    onChange={(e) => updateSetting('votingTimeLimit', parseInt(e.target.value))}
-                  >
-                    <option value={15}>15 seconds</option>
-                    <option value={30}>30 seconds</option>
-                    <option value={45}>45 seconds</option>
-                    <option value={60}>60 seconds</option>
-                  </select>
+                    onChange={(value) => updateSetting('votingTimeLimit', value)}
+                    options={[
+                      { value: 15, label: '15 seconds' },
+                      { value: 30, label: '30 seconds' },
+                      { value: 45, label: '45 seconds' },
+                      { value: 60, label: '60 seconds' }
+                    ]}
+                  />
                 </label>
               </div>
 
               <div className="setting">
                 <label>
                   Max Rounds:
-                  <select
+                  <Dropdown
                     value={settings.maxRounds}
-                    onChange={(e) => updateSetting('maxRounds', parseInt(e.target.value))}
-                  >
-                    {[3, 4, 5, 6, 7, 8].map(n => (
-                      <option key={n} value={n}>{n} rounds</option>
-                    ))}
-                  </select>
+                    onChange={(value) => updateSetting('maxRounds', value)}
+                    options={[3, 4, 5, 6, 7, 8].map(n => ({
+                      value: n,
+                      label: `${n} rounds`
+                    }))}
+                  />
                 </label>
               </div>
 
@@ -366,13 +368,14 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
               <div className="setting">
                 <label>
                   Winner if Max Rounds Reached:
-                  <select
+                  <Dropdown
                     value={settings.winnerOnMaxRounds}
-                    onChange={(e) => updateSetting('winnerOnMaxRounds', e.target.value)}
-                  >
-                    <option value="innocents">Innocents</option>
-                    <option value="imposters">Imposters</option>
-                  </select>
+                    onChange={(value) => updateSetting('winnerOnMaxRounds', value)}
+                    options={[
+                      { value: 'innocents', label: 'Innocents' },
+                      { value: 'imposters', label: 'Imposters' }
+                    ]}
+                  />
                 </label>
               </div>
             </div>
@@ -412,20 +415,14 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
                 <div className="setting">
                   <label>
                     Number of Puzzles:
-                    <select
+                    <Dropdown
                       value={settings.puzzleCount}
-                      onChange={(e) => updateSetting('puzzleCount', parseInt(e.target.value))}
-                    >
-                      <option value={2}>2 puzzles (8 categories)</option>
-                      <option value={3}>3 puzzles (12 categories)</option>
-                      <option value={4}>4 puzzles (16 categories)</option>
-                      <option value={5}>5 puzzles (20 categories)</option>
-                      <option value={6}>6 puzzles (24 categories)</option>
-                      <option value={7}>7 puzzles (28 categories)</option>
-                      <option value={8}>8 puzzles (32 categories)</option>
-                      <option value={9}>9 puzzles (36 categories)</option>
-                      <option value={10}>10 puzzles (40 categories)</option>
-                    </select>
+                      onChange={(value) => updateSetting('puzzleCount', value)}
+                      options={[2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => ({
+                        value: n,
+                        label: `${n} puzzles (${n * 4} categories)`
+                      }))}
+                    />
                   </label>
                 </div>
               )}

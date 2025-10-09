@@ -232,6 +232,11 @@
   color: #E7CFCD;
 }
 
+/* Ensure custom dropdown fits in settings layout */
+.setting .custom-dropdown {
+  flex-shrink: 0;
+}
+
 .setting.checkbox label {
   cursor: pointer;
   justify-content: flex-start;
