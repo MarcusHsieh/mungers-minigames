@@ -328,7 +328,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
   }
 
   return (
-    <div className={`card connections-game ${gameStatus === 'playing' ? 'playing' : ''}`} ref={boardRef}>
+    <div className={`card connections-game ${gameStatus === 'playing' ? 'playing' : ''}`}>
       <div className="game-header">
         <h1 className="title">🧩 Connections</h1>
         <div className="game-stats">
@@ -374,7 +374,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
         ))}
       </div>
 
-      <div className="board">
+      <div className="board" ref={boardRef}>
         {/* Render other players' cursors */}
         {Array.from(cursors.entries()).map(([playerId, cursor]) => (
           <div

@@ -28,6 +28,14 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
     }
   }, [socket, lobbyData]);
 
+  // Check if joining a game in progress and immediately transition
+  useEffect(() => {
+    if (lobbyData && lobbyData.state === 'playing' && lobbyData.gameType) {
+      console.log(`Joining game in progress: ${lobbyData.gameType}`);
+      onStartGame(lobbyData.gameType);
+    }
+  }, [lobbyData, onStartGame]);
+
   useEffect(() => {
     if (!socket) return;
 
