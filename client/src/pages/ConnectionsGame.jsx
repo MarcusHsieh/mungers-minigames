@@ -136,6 +136,13 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       }
     });
 
+    socket.on('words_shuffled', (data) => {
+      setWords(data.words);
+      if (data.shuffledBy) {
+        showMessage(`${data.shuffledBy} shuffled the board`, 'hint');
+      }
+    });
+
     return () => {
       socket.off('lobby_update');
       socket.off('connections_start');
@@ -148,6 +155,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       socket.off('sync_hints');
       socket.off('score_update');
       socket.off('connections_end');
+      socket.off('words_shuffled');
     };
   }, [socket]);
 
@@ -182,7 +190,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       board.removeEventListener('mousemove', handleMouseMove);
       if (throttleTimeout) clearTimeout(throttleTimeout);
     };
-  }, [socket]);
+  }, [socket, loading]);
 
   const showMessage = (text, type) => {
     setMessage({ text, type });
@@ -222,7 +230,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
   };
 
   const shuffle = () => {
-    setWords(prev => [...prev].sort(() => Math.random() - 0.5));
+    socket.emit('shuffle_words');
   };
 
   const useHint = () => {

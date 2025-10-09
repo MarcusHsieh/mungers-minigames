@@ -350,6 +350,25 @@ export class ConnectionsGame {
     console.log(`Hint used in lobby ${this.lobbyCode}: ${hintCategory.name}`);
   }
 
+  shuffleWords(playerId) {
+    if (this.phase !== 'playing') {
+      return;
+    }
+
+    const player = this.lobby.players.get(playerId);
+
+    // Shuffle the words array
+    this.words = this.words.sort(() => Math.random() - 0.5);
+
+    // Broadcast the new word order to all players
+    this.io.to(this.lobbyCode).emit('words_shuffled', {
+      words: this.words,
+      shuffledBy: player?.name || 'Unknown'
+    });
+
+    console.log(`Words shuffled by ${player?.name || 'Unknown'} in lobby ${this.lobbyCode}`);
+  }
+
   removePlayer(playerId) {
     // Clean up player's cursor and selections
     this.playerCursors.delete(playerId);

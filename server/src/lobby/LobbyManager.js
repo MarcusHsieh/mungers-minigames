@@ -57,9 +57,13 @@ export class LobbyManager {
 
     console.log(`Player ${playerName} joined lobby ${lobbyCode}${isSpectator ? ' as spectator' : ''}`);
 
-    // If joining Connections mid-game, notify game instance
-    if (lobby.state === 'playing' && lobby.gameType === 'connections' && lobby.game) {
-      lobby.game.addPlayer(socket.id);
+    // If joining mid-game, notify game instance
+    if (lobby.state === 'playing' && lobby.game) {
+      if (lobby.gameType === 'connections') {
+        lobby.game.addPlayer(socket.id);
+      } else if (lobby.gameType === 'imposter') {
+        lobby.game.addPlayer(socket.id);
+      }
     }
 
     callback({ success: true, lobby: this.getLobbyInfo(lobby) });
@@ -245,6 +249,13 @@ export class LobbyManager {
     const lobby = this.getLobbyForSocket(socket.id);
     if (lobby?.game instanceof ConnectionsGame) {
       lobby.game.useHint(socket.id);
+    }
+  }
+
+  handleConnectionsShuffle(socket) {
+    const lobby = this.getLobbyForSocket(socket.id);
+    if (lobby?.game instanceof ConnectionsGame) {
+      lobby.game.shuffleWords(socket.id);
     }
   }
 

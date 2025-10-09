@@ -94,6 +94,10 @@ io.on('connection', (socket) => {
     lobbyManager.handleConnectionsHint(socket);
   });
 
+  socket.on('shuffle_words', () => {
+    lobbyManager.handleConnectionsShuffle(socket);
+  });
+
   // Disconnection
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
