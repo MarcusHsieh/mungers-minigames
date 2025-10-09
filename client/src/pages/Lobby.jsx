@@ -212,7 +212,7 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
               className={`color-option ${selectedColor === color.value ? 'selected' : ''}`}
               style={{ backgroundColor: color.value }}
               onClick={() => handleColorChange(color.value)}
-              title={color.name}
+              aria-label={color.name}
             />
           ))}
         </div>

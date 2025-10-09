@@ -24,6 +24,7 @@ function ImposterGame({ onEnd, lobbyData }) {
   const [gameEndInfo, setGameEndInfo] = useState(null);
   const [cursors, setCursors] = useState(new Map());
   const [players, setPlayers] = useState([]);
+  const [eventLog, setEventLog] = useState([]);
 
   // Initialize players from lobby data
   useEffect(() => {
@@ -67,6 +68,15 @@ function ImposterGame({ onEnd, lobbyData }) {
       if (data.players) {
         setPlayers(data.players);
       }
+
+      setEventLog([]);
+      addEventLog(`Game started! You are ${data.role === 'imposter' ? 'an Imposter' : 'an Innocent'}`,
+        data.role === 'imposter' ? 'error' : 'success');
+      if (data.word) {
+        addEventLog(data.role === 'imposter' && data.word !== 'You are the Imposter'
+          ? `Hint word: ${data.word}`
+          : `Secret word: ${data.word}`, 'info');
+      }
     });
 
     socket.on('round_start', (data) => {
@@ -78,6 +88,7 @@ function ImposterGame({ onEnd, lobbyData }) {
       }));
       setSubmittedWords([]);
       setVoteResults(null);
+      addEventLog(`Round ${data.round}/${data.totalRounds} started`, 'info');
     });
 
     socket.on('turn_start', (data) => {
@@ -88,28 +99,41 @@ function ImposterGame({ onEnd, lobbyData }) {
         currentPlayerName: data.playerName
       }));
       setTimeRemaining(data.timeLimit);
+      addEventLog(`${data.playerName}'s turn`, 'info');
     });
 
     socket.on('word_submitted', (data) => {
       setSubmittedWords(prev => [...prev, data]);
       setWordInput('');
+      addEventLog(`${data.playerName} submitted: "${data.word}"`, 'info');
     });
 
     socket.on('voting_start', (data) => {
       setGameState(prev => ({ ...prev, phase: 'voting' }));
       setTimeRemaining(data.timeLimit);
       setSubmittedWords(data.words);
+      addEventLog('Voting phase started', 'info');
     });
 
     socket.on('voting_result', (data) => {
       setGameState(prev => ({ ...prev, phase: 'roundEnd' }));
       setVoteResults(data);
       setSelectedVote(null);
+
+      if (data.eliminated) {
+        addEventLog(`${data.eliminated.playerName} was eliminated!`, 'error');
+      } else if (data.tie) {
+        addEventLog('Vote ended in a tie - no elimination', 'info');
+      } else {
+        addEventLog('Voting complete', 'info');
+      }
     });
 
     socket.on('game_end', (data) => {
       setGameState(prev => ({ ...prev, phase: 'gameEnd' }));
       setGameEndInfo(data);
+      addEventLog(`Game Over! ${data.winner === 'imposters' ? 'Imposters' : 'Innocents'} win!`,
+        data.winner === 'imposters' ? 'error' : 'success');
     });
 
     socket.on('imposter_cursor_update', (data) => {
@@ -187,6 +211,11 @@ function ImposterGame({ onEnd, lobbyData }) {
       if (throttleTimeout) clearTimeout(throttleTimeout);
     };
   }, [socket]);
+
+  const addEventLog = (text, type = 'info') => {
+    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+    setEventLog(prev => [...prev, { text, type, timestamp, id: Date.now() + Math.random() }]);
+  };
 
   const submitWord = () => {
     if (wordInput.trim() && gameState.phase === 'turn') {
@@ -299,6 +328,20 @@ function ImposterGame({ onEnd, lobbyData }) {
               </div>
             </div>
           ))}
+        </div>
+
+        <h3 style={{ marginTop: '20px' }}>Event Log</h3>
+        <div className="event-log">
+          {eventLog.length === 0 ? (
+            <div className="event-log-empty">No events yet...</div>
+          ) : (
+            eventLog.map((event) => (
+              <div key={event.id} className={`event-log-item event-${event.type}`}>
+                <span className="event-time">{event.timestamp}</span>
+                <span className="event-text">{event.text}</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

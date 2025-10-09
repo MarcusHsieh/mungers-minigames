@@ -28,6 +28,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
   const [players, setPlayers] = useState([]);
   const [playerScores, setPlayerScores] = useState(new Map()); // playerId -> score
   const [finalScores, setFinalScores] = useState([]);
+  const [eventLog, setEventLog] = useState([]);
 
   // Initialize players from lobby data
   useEffect(() => {
@@ -67,11 +68,14 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       setOtherSelections(new Map());
       setGameStatus('playing');
       setLoading(false);
+      setEventLog([]);
 
       // Update player list from authoritative server data
       if (data.players) {
         setPlayers(data.players);
       }
+
+      addEventLog('Game started!', 'success');
     });
 
     socket.on('cursor_update', (data) => {
@@ -111,6 +115,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       setSolvedCategories(prev => [...prev, data.category]);
       setMySelections(new Set());
       showMessage(`${data.solvedBy} found: ${data.category.name}!`, 'success');
+      addEventLog(`${data.solvedBy} found: ${data.category.name} (${data.category.words.join(', ')})`, 'success');
 
       // Remove solved words from the board
       setWords(prev => prev.filter(w => !data.category.words.includes(w)));
@@ -119,12 +124,14 @@ function ConnectionsGame({ onEnd, lobbyData }) {
     socket.on('mistake_made', (data) => {
       setMistakeCount(data.mistakeCount);
       showMessage(`${data.playerName} made a mistake! (${data.mistakeCount}/${data.maxMistakes})`, 'error');
+      addEventLog(`${data.playerName} made a mistake (${data.mistakeCount}/${data.maxMistakes})`, 'error');
     });
 
     socket.on('hint_revealed', (data) => {
       setHintsUsed(data.hintsUsed);
       setRevealedHints(prev => [...prev, data.categoryName]);
       showMessage(`${data.usedBy} revealed a hint: ${data.categoryName}`, 'hint');
+      addEventLog(`${data.usedBy} used a hint: ${data.categoryName}`, 'hint');
     });
 
     socket.on('sync_hints', (data) => {
@@ -146,12 +153,14 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       if (data.scores) {
         setFinalScores(data.scores);
       }
+      addEventLog(data.won ? 'Game won! All categories found!' : 'Game over! Too many mistakes.', data.won ? 'success' : 'error');
     });
 
     socket.on('words_shuffled', (data) => {
       setWords(data.words);
       if (data.shuffledBy) {
         showMessage(`${data.shuffledBy} shuffled the board`, 'hint');
+        addEventLog(`${data.shuffledBy} shuffled the board`, 'info');
       }
     });
 
@@ -207,6 +216,11 @@ function ConnectionsGame({ onEnd, lobbyData }) {
   const showMessage = (text, type) => {
     setMessage({ text, type });
     setTimeout(() => setMessage(null), 3000);
+  };
+
+  const addEventLog = (text, type = 'info') => {
+    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+    setEventLog(prev => [...prev, { text, type, timestamp, id: Date.now() + Math.random() }]);
   };
 
   const toggleWord = (word) => {
@@ -458,6 +472,20 @@ function ConnectionsGame({ onEnd, lobbyData }) {
               </div>
             </div>
           ))}
+        </div>
+
+        <h3 style={{ marginTop: '20px' }}>Event Log</h3>
+        <div className="event-log">
+          {eventLog.length === 0 ? (
+            <div className="event-log-empty">No events yet...</div>
+          ) : (
+            eventLog.map((event) => (
+              <div key={event.id} className={`event-log-item event-${event.type}`}>
+                <span className="event-time">{event.timestamp}</span>
+                <span className="event-text">{event.text}</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
