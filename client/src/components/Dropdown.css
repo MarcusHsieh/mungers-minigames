@@ -110,3 +110,73 @@
 .dropdown-menu::-webkit-scrollbar-thumb:hover {
   background: rgba(138, 139, 223, 0.5);
 }
+
+/* Mobile and Tablet Responsive Styles */
+@media screen and (max-width: 768px) {
+  .custom-dropdown {
+    min-width: 140px;
+  }
+
+  .dropdown-toggle {
+    padding: 10px 12px;
+    font-size: 15px;
+    /* Larger touch targets for mobile */
+  }
+
+  .dropdown-item {
+    padding: 12px 14px;
+    font-size: 15px;
+    /* Larger touch targets for mobile */
+  }
+
+  .dropdown-menu {
+    max-height: 200px;
+    /* Smaller max height on mobile to avoid keyboard issues */
+  }
+
+  .dropdown-arrow {
+    font-size: 12px;
+  }
+
+  /* Hide scrollbar on mobile for cleaner look */
+  .dropdown-menu::-webkit-scrollbar {
+    width: 4px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .custom-dropdown {
+    min-width: 120px;
+  }
+
+  .dropdown-toggle {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .dropdown-item {
+    padding: 12px 10px;
+    font-size: 14px;
+  }
+
+  .dropdown-label {
+    font-size: 14px;
+  }
+
+  .dropdown-menu {
+    max-height: 180px;
+  }
+}
+
+/* Tablet landscape */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .dropdown-toggle {
+    padding: 9px 12px;
+    font-size: 14px;
+  }
+
+  .dropdown-item {
+    padding: 11px 12px;
+    font-size: 14px;
+  }
+}

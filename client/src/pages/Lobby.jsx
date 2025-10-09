@@ -344,7 +344,7 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
               </div>
 
               <div className="setting checkbox">
-                <label>
+                <label className="clickable">
                   <input
                     type="checkbox"
                     checked={settings.giveHintWord}
@@ -355,7 +355,7 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
               </div>
 
               <div className="setting checkbox">
-                <label>
+                <label className="clickable">
                   <input
                     type="checkbox"
                     checked={settings.randomEliminationOnTie}
@@ -401,7 +401,7 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
               <h2>Game Settings</h2>
 
               <div className="setting checkbox">
-                <label>
+                <label className="clickable">
                   <input
                     type="checkbox"
                     checked={settings.megaMode}
