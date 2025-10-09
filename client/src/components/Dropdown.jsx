@@ -3,6 +3,7 @@ import './Dropdown.css';
 
 function Dropdown({ value, options, onChange, label }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking/touching outside
@@ -24,6 +25,19 @@ function Dropdown({ value, options, onChange, label }) {
     };
   }, [isOpen]);
 
+  // Check viewport boundaries and adjust dropdown direction
+  useEffect(() => {
+    if (isOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const menuHeight = Math.min(240, options.length * 42); // Approximate menu height
+
+      // Open upward if not enough space below and more space above
+      setOpenUpward(spaceBelow < menuHeight && rect.top > menuHeight);
+    }
+  }, [isOpen, options.length]);
+
   const handleSelect = (optionValue) => {
     onChange(optionValue);
     setIsOpen(false);
@@ -35,7 +49,7 @@ function Dropdown({ value, options, onChange, label }) {
     <div className="custom-dropdown" ref={dropdownRef}>
       <button
         type="button"
-        className={`dropdown-toggle ${isOpen ? 'open' : ''}`}
+        className={`dropdown-toggle ${isOpen ? 'open' : ''} ${openUpward ? 'open-upward' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="dropdown-label">{selectedOption?.label || 'Select...'}</span>
@@ -43,7 +57,7 @@ function Dropdown({ value, options, onChange, label }) {
       </button>
 
       {isOpen && (
-        <div className="dropdown-menu">
+        <div className={`dropdown-menu ${openUpward ? 'open-upward' : ''}`}>
           {options.map((option) => (
             <button
               key={option.value}

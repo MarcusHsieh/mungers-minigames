@@ -28,7 +28,7 @@ export function updateCursorColor(color) {
     body.custom-cursor input[type="checkbox"],
     body.custom-cursor input[type="radio"],
     body.custom-cursor label.clickable {
-      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text y="20" font-size="20" fill="${encodedColor}">👆</text></svg>') 12 12, pointer !important;
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text y="20" font-size="20" fill="${encodedColor}">►</text></svg>') 12 12, pointer !important;
     }
 
     body.custom-cursor input[type="text"],
