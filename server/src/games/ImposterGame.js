@@ -308,4 +308,26 @@ export class ImposterGame {
       this.lobbyManager.broadcastLobbyUpdate(this.lobbyCode);
     }, 5000);
   }
+
+  updateCursor(socket, data) {
+    // Validate and clamp coordinates to 0-100 range
+    const x = Math.max(0, Math.min(100, parseFloat(data.x) || 0));
+    const y = Math.max(0, Math.min(100, parseFloat(data.y) || 0));
+
+    const player = this.lobby.players.get(socket.id);
+    if (!player) return; // Player not in lobby
+
+    // Broadcast to others in lobby (exclude sender)
+    socket.broadcast.to(this.lobbyCode).emit('imposter_cursor_update', {
+      playerId: socket.id,
+      playerName: player.name,
+      x,
+      y
+    });
+  }
+
+  removePlayer(playerId) {
+    // Notify other players that cursor is gone
+    this.io.to(this.lobbyCode).emit('imposter_cursor_remove', { playerId });
+  }
 }

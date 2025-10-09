@@ -1,6 +1,7 @@
 .imposter-game {
   max-width: 800px;
   margin: 0 auto;
+  position: relative;
 }
 
 .game-header {
@@ -280,4 +281,29 @@
   background: rgba(138, 139, 223, 0.2);
   border-radius: 6px;
   margin-bottom: 8px;
+}
+
+/* Cursor tracking */
+.imposter-cursor {
+  position: absolute;
+  pointer-events: none;
+  z-index: 100;
+  transition: left 0.05s linear, top 0.05s linear;
+}
+
+.imposter-cursor .cursor-pointer {
+  color: #fbbf24;
+  font-size: 20px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.imposter-cursor .cursor-name {
+  background: rgba(0, 0, 0, 0.8);
+  color: #fbbf24;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-top: 4px;
 }

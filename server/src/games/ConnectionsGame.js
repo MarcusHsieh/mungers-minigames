@@ -106,26 +106,23 @@ export class ConnectionsGame {
     console.log(`Mega mode: Merged ${puzzles.length} puzzles into ${this.categories.length} categories`);
   }
 
-  updateCursor(playerId, data) {
+  updateCursor(socket, data) {
     // Validate and clamp coordinates to 0-100 range
     const x = Math.max(0, Math.min(100, parseFloat(data.x) || 0));
     const y = Math.max(0, Math.min(100, parseFloat(data.y) || 0));
 
-    this.playerCursors.set(playerId, { x, y });
+    this.playerCursors.set(socket.id, { x, y });
 
-    const player = this.lobby.players.get(playerId);
+    const player = this.lobby.players.get(socket.id);
     if (!player) return; // Player not in lobby
 
-    // Get sender's socket to exclude from broadcast
-    const senderSocket = this.io.sockets.sockets.get(playerId);
-    if (senderSocket) {
-      senderSocket.broadcast.to(this.lobbyCode).emit('cursor_update', {
-        playerId,
-        playerName: player.name,
-        x,
-        y
-      });
-    }
+    // Broadcast to others in lobby (exclude sender)
+    socket.broadcast.to(this.lobbyCode).emit('cursor_update', {
+      playerId: socket.id,
+      playerName: player.name,
+      x,
+      y
+    });
   }
 
   selectWord(playerId, word) {

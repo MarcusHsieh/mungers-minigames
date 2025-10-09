@@ -68,6 +68,10 @@ io.on('connection', (socket) => {
     lobbyManager.handleImposterVote(socket, data);
   });
 
+  socket.on('imposter_cursor_move', (data) => {
+    lobbyManager.handleImposterCursor(socket, data);
+  });
+
   // Connections game events
   socket.on('cursor_move', (data) => {
     lobbyManager.handleConnectionsCursor(socket, data);

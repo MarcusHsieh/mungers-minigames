@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import './ImposterGame.css';
 
 function ImposterGame({ onEnd }) {
   const { socket } = useSocket();
+  const gameAreaRef = useRef(null);
   const [gameState, setGameState] = useState({
     role: null,
     word: null,
@@ -19,6 +20,7 @@ function ImposterGame({ onEnd }) {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [voteResults, setVoteResults] = useState(null);
   const [gameEndInfo, setGameEndInfo] = useState(null);
+  const [cursors, setCursors] = useState(new Map());
 
   useEffect(() => {
     if (!socket) return;
@@ -77,6 +79,27 @@ function ImposterGame({ onEnd }) {
       setGameEndInfo(data);
     });
 
+    socket.on('imposter_cursor_update', (data) => {
+      if (data.playerId !== socket.id &&
+          typeof data.x === 'number' &&
+          typeof data.y === 'number' &&
+          typeof data.playerName === 'string') {
+        setCursors(prev => new Map(prev).set(data.playerId, {
+          x: data.x,
+          y: data.y,
+          name: data.playerName
+        }));
+      }
+    });
+
+    socket.on('imposter_cursor_remove', (data) => {
+      setCursors(prev => {
+        const newCursors = new Map(prev);
+        newCursors.delete(data.playerId);
+        return newCursors;
+      });
+    });
+
     return () => {
       socket.off('game_start');
       socket.off('round_start');
@@ -85,6 +108,8 @@ function ImposterGame({ onEnd }) {
       socket.off('voting_start');
       socket.off('voting_result');
       socket.off('game_end');
+      socket.off('imposter_cursor_update');
+      socket.off('imposter_cursor_remove');
     };
   }, [socket]);
 
@@ -94,6 +119,39 @@ function ImposterGame({ onEnd }) {
       return () => clearTimeout(timer);
     }
   }, [timeRemaining]);
+
+  // Track mouse movement for cursors
+  useEffect(() => {
+    if (!gameAreaRef.current || !socket) return;
+
+    let throttleTimeout = null;
+
+    const handleMouseMove = (e) => {
+      if (!throttleTimeout) {
+        const rect = gameAreaRef.current.getBoundingClientRect();
+        let x = ((e.clientX - rect.left) / rect.width) * 100;
+        let y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        // Clamp to 0-100 range
+        x = Math.max(0, Math.min(100, x));
+        y = Math.max(0, Math.min(100, y));
+
+        socket.emit('imposter_cursor_move', { x, y });
+
+        throttleTimeout = setTimeout(() => {
+          throttleTimeout = null;
+        }, 50);
+      }
+    };
+
+    const area = gameAreaRef.current;
+    area.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      area.removeEventListener('mousemove', handleMouseMove);
+      if (throttleTimeout) clearTimeout(throttleTimeout);
+    };
+  }, [socket]);
 
   const submitWord = () => {
     if (wordInput.trim() && gameState.phase === 'turn') {
@@ -144,7 +202,22 @@ function ImposterGame({ onEnd }) {
   }
 
   return (
-    <div className="card imposter-game">
+    <div className="card imposter-game" ref={gameAreaRef}>
+      {/* Render other players' cursors */}
+      {Array.from(cursors.entries()).map(([playerId, cursor]) => (
+        <div
+          key={playerId}
+          className="imposter-cursor"
+          style={{
+            left: `${cursor.x}%`,
+            top: `${cursor.y}%`
+          }}
+        >
+          <div className="cursor-pointer">▲</div>
+          <div className="cursor-name">{cursor.name}</div>
+        </div>
+      ))}
+
       <div className="game-header">
         <div className="role-badge" data-role={gameState.isSpectator ? 'spectator' : gameState.role}>
           {gameState.isSpectator ? '👁️ Spectator' :

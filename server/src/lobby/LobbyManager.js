@@ -191,11 +191,18 @@ export class LobbyManager {
     }
   }
 
+  handleImposterCursor(socket, data) {
+    const lobby = this.getLobbyForSocket(socket.id);
+    if (lobby?.game instanceof ImposterGame) {
+      lobby.game.updateCursor(socket, data);
+    }
+  }
+
   // Connections game handlers
   handleConnectionsCursor(socket, data) {
     const lobby = this.getLobbyForSocket(socket.id);
     if (lobby?.game instanceof ConnectionsGame) {
-      lobby.game.updateCursor(socket.id, data);
+      lobby.game.updateCursor(socket, data);
     }
   }
 
