@@ -4,11 +4,18 @@ import Lobby from './pages/Lobby';
 import ImposterGame from './pages/ImposterGame';
 import ConnectionsGame from './pages/ConnectionsGame';
 import { SocketProvider, useSocket } from './context/SocketContext';
+import { enableCustomCursor, updateCursorColor } from './utils/cursor';
 
 function AppContent() {
   const { socket } = useSocket();
   const [screen, setScreen] = useState('home'); // home, lobby, imposter, connections
   const [lobbyData, setLobbyData] = useState(null);
+
+  // Enable custom cursor on mount
+  useEffect(() => {
+    enableCustomCursor();
+    updateCursorColor('#f59e0b'); // Default color
+  }, []);
 
   const goToLobby = (data) => {
     setLobbyData(data);

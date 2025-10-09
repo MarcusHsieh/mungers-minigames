@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
+import { updateCursorColor } from '../utils/cursor';
 import './Lobby.css';
 
 const AVAILABLE_COLORS = [
@@ -42,6 +43,7 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
       const currentPlayer = lobbyData.players?.find(p => p.id === socket.id);
       if (currentPlayer?.color) {
         setSelectedColor(currentPlayer.color);
+        updateCursorColor(currentPlayer.color);
       }
     }
   }, [socket, lobbyData]);
@@ -148,6 +150,7 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
 
   const handleColorChange = (color) => {
     setSelectedColor(color);
+    updateCursorColor(color);
     if (socket) {
       socket.emit('update_player_color', { color });
     }
@@ -172,7 +175,7 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
   const canStart = lobby.players.length >= minPlayers && isHost;
 
   return (
-    <div className="card lobby" ref={lobbyAreaRef} style={{ cursor: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text y="20" font-size="20" fill="${encodeURIComponent(selectedColor)}">▲</text></svg>') 12 12, auto` }}>
+    <div className="card lobby" ref={lobbyAreaRef}>
       {/* Render other players' cursors */}
       {Array.from(lobbyCursors.entries()).map(([playerId, cursor]) => (
         <div

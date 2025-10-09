@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
+import { updateCursorColor } from '../utils/cursor';
 import './ConnectionsGame.css';
 
 const COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
@@ -34,6 +35,16 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       setPlayers(lobbyData.players);
     }
   }, [lobbyData]);
+
+  // Update cursor color based on player's color
+  useEffect(() => {
+    if (socket && players.length > 0) {
+      const currentPlayer = players.find(p => p.id === socket.id);
+      if (currentPlayer?.color) {
+        updateCursorColor(currentPlayer.color);
+      }
+    }
+  }, [socket, players]);
 
   useEffect(() => {
     if (!socket) return;
@@ -378,11 +389,6 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       <div
         className="board"
         ref={boardRef}
-        style={{
-          cursor: players.find(p => p.id === socket?.id)?.color
-            ? `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text y="20" font-size="20" fill="${encodeURIComponent(players.find(p => p.id === socket?.id)?.color || '#888')}">▲</text></svg>') 12 12, auto`
-            : 'auto'
-        }}
       >
         {/* Render other players' cursors */}
         {Array.from(cursors.entries()).map(([playerId, cursor]) => (
