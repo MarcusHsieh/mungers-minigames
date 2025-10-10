@@ -39,8 +39,8 @@ function Dropdown({ value, options, onChange, label }) {
   }, [isOpen, options.length]);
 
   const handleSelect = (optionValue) => {
-    onChange(optionValue);
     setIsOpen(false);
+    onChange(optionValue);
   };
 
   const selectedOption = options.find(opt => opt.value === value);
