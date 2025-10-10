@@ -266,57 +266,60 @@ export class ConnectionsGame {
     this.playerSelections.set(playerId, new Set());
     this.playerScores.set(playerId, 0); // Initialize score for new player
 
-    // Send current game state to new player
-    this.io.to(playerId).emit('connections_start', {
-      words: this.words,
-      maxMistakes: this.maxMistakes,
-      maxHints: this.maxHints,
-      isMegaMode: this.isMegaMode,
-      players: Array.from(this.lobby.players.values())
-    });
+    // Wait for client to mount component and set up listeners before sending state
+    setTimeout(() => {
+      // Send current game state to new player
+      this.io.to(playerId).emit('connections_start', {
+        words: this.words,
+        maxMistakes: this.maxMistakes,
+        maxHints: this.maxHints,
+        isMegaMode: this.isMegaMode,
+        players: Array.from(this.lobby.players.values())
+      });
 
-    // Send already solved categories
-    for (const categoryName of this.solvedCategories) {
-      const category = this.categories.find(c => c.name === categoryName);
-      if (category) {
-        this.io.to(playerId).emit('category_solved', {
-          category,
-          solvedBy: 'Previous players',
-          playerId: 'system'
+      // Send already solved categories
+      for (const categoryName of this.solvedCategories) {
+        const category = this.categories.find(c => c.name === categoryName);
+        if (category) {
+          this.io.to(playerId).emit('category_solved', {
+            category,
+            solvedBy: 'Previous players',
+            playerId: 'system'
+          });
+        }
+      }
+
+      // Send current hint count and any revealed hints
+      if (this.revealedHints.length > 0) {
+        this.io.to(playerId).emit('sync_hints', {
+          hintsUsed: this.hintsUsed,
+          maxHints: this.maxHints,
+          revealedHints: this.revealedHints
         });
       }
-    }
 
-    // Send current hint count and any revealed hints
-    if (this.revealedHints.length > 0) {
-      this.io.to(playerId).emit('sync_hints', {
-        hintsUsed: this.hintsUsed,
-        maxHints: this.maxHints,
-        revealedHints: this.revealedHints
-      });
-    }
+      // Send current mistake count
+      if (this.mistakeCount > 0) {
+        this.io.to(playerId).emit('mistake_made', {
+          playerId: 'system',
+          playerName: 'System',
+          mistakeCount: this.mistakeCount,
+          maxMistakes: this.maxMistakes
+        });
+      }
 
-    // Send current mistake count
-    if (this.mistakeCount > 0) {
-      this.io.to(playerId).emit('mistake_made', {
-        playerId: 'system',
-        playerName: 'System',
-        mistakeCount: this.mistakeCount,
-        maxMistakes: this.maxMistakes
-      });
-    }
+      // Send current scores for all players
+      for (const [scorePlayerId, score] of this.playerScores.entries()) {
+        const player = this.lobby.players.get(scorePlayerId);
+        this.io.to(playerId).emit('score_update', {
+          playerId: scorePlayerId,
+          score,
+          playerName: player?.name || 'Unknown'
+        });
+      }
 
-    // Send current scores for all players
-    for (const [scorePlayerId, score] of this.playerScores.entries()) {
-      const player = this.lobby.players.get(scorePlayerId);
-      this.io.to(playerId).emit('score_update', {
-        playerId: scorePlayerId,
-        score,
-        playerName: player?.name || 'Unknown'
-      });
-    }
-
-    console.log(`Player ${playerId} joined Connections game mid-session`);
+      console.log(`Player ${playerId} joined Connections game mid-session`);
+    }, 500); // 500ms delay to ensure client is ready
   }
 
   useHint(playerId) {

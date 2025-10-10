@@ -337,63 +337,66 @@ export class ImposterGame {
     // Mark as spectator
     player.isSpectator = true;
 
-    // Send game start info to spectator
-    this.io.to(playerId).emit('game_start', {
-      role: 'spectator',
-      word: null,
-      imposterCount: this.settings.imposterCount,
-      isSpectator: true,
-      players: Array.from(this.lobby.players.values())
-    });
-
-    // If game has started, send current round info
-    if (this.currentRound > 0) {
-      this.io.to(playerId).emit('round_start', {
-        round: this.currentRound,
-        totalRounds: this.settings.maxRounds
+    // Wait for client to mount component and set up listeners before sending state
+    setTimeout(() => {
+      // Send game start info to spectator
+      this.io.to(playerId).emit('game_start', {
+        role: 'spectator',
+        word: null,
+        imposterCount: this.settings.imposterCount,
+        isSpectator: true,
+        players: Array.from(this.lobby.players.values())
       });
-    }
 
-    // If currently in a turn, send turn info
-    if (this.phase === 'turn' && this.currentTurnIndex < this.turnOrder.length) {
-      const currentPlayerId = this.turnOrder[this.currentTurnIndex];
-      const currentPlayer = this.lobby.players.get(currentPlayerId);
-
-      this.io.to(playerId).emit('turn_start', {
-        playerId: currentPlayerId,
-        playerName: currentPlayer?.name || 'Unknown',
-        timeLimit: this.settings.turnTimeLimit
-      });
-    }
-
-    // Send already submitted words
-    if (this.submittedWords.size > 0) {
-      const wordsList = Array.from(this.submittedWords.entries()).map(([id, word]) => ({
-        playerId: id,
-        playerName: this.lobby.players.get(id)?.name || 'Unknown',
-        word
-      }));
-
-      for (const wordData of wordsList) {
-        this.io.to(playerId).emit('word_submitted', wordData);
+      // If game has started, send current round info
+      if (this.currentRound > 0) {
+        this.io.to(playerId).emit('round_start', {
+          round: this.currentRound,
+          totalRounds: this.settings.maxRounds
+        });
       }
-    }
 
-    // If in voting phase, send voting info
-    if (this.phase === 'voting') {
-      const wordsList = Array.from(this.submittedWords.entries()).map(([id, word]) => ({
-        playerId: id,
-        playerName: this.lobby.players.get(id)?.name || 'Unknown',
-        word
-      }));
+      // If currently in a turn, send turn info
+      if (this.phase === 'turn' && this.currentTurnIndex < this.turnOrder.length) {
+        const currentPlayerId = this.turnOrder[this.currentTurnIndex];
+        const currentPlayer = this.lobby.players.get(currentPlayerId);
 
-      this.io.to(playerId).emit('voting_start', {
-        words: wordsList,
-        timeLimit: this.settings.votingTimeLimit
-      });
-    }
+        this.io.to(playerId).emit('turn_start', {
+          playerId: currentPlayerId,
+          playerName: currentPlayer?.name || 'Unknown',
+          timeLimit: this.settings.turnTimeLimit
+        });
+      }
 
-    console.log(`Player ${playerId} joined Imposter game as spectator`);
+      // Send already submitted words
+      if (this.submittedWords.size > 0) {
+        const wordsList = Array.from(this.submittedWords.entries()).map(([id, word]) => ({
+          playerId: id,
+          playerName: this.lobby.players.get(id)?.name || 'Unknown',
+          word
+        }));
+
+        for (const wordData of wordsList) {
+          this.io.to(playerId).emit('word_submitted', wordData);
+        }
+      }
+
+      // If in voting phase, send voting info
+      if (this.phase === 'voting') {
+        const wordsList = Array.from(this.submittedWords.entries()).map(([id, word]) => ({
+          playerId: id,
+          playerName: this.lobby.players.get(id)?.name || 'Unknown',
+          word
+        }));
+
+        this.io.to(playerId).emit('voting_start', {
+          words: wordsList,
+          timeLimit: this.settings.votingTimeLimit
+        });
+      }
+
+      console.log(`Player ${playerId} joined Imposter game as spectator`);
+    }, 500); // 500ms delay to ensure client is ready
   }
 
   removePlayer(playerId) {
