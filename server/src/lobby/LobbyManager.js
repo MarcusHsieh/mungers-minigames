@@ -9,10 +9,16 @@ export class LobbyManager {
     this.io = io;
     this.lobbies = new Map(); // lobbyCode -> Lobby
     this.socketToLobby = new Map(); // socketId -> lobbyCode
+    this.sessions = new Map(); // sessionId -> SessionData
+    this.disconnectedPlayers = new Map(); // socketId -> DisconnectData
+
+    // Clean up expired sessions every 5 minutes
+    setInterval(() => this.cleanupExpiredSessions(), 5 * 60 * 1000);
   }
 
   createLobby(socket, data, callback) {
     const { gameType, playerName, settings } = data;
+    const sessionId = socket.handshake.auth?.sessionId;
     const lobbyCode = nanoid();
 
     const lobby = {
@@ -29,6 +35,22 @@ export class LobbyManager {
     this.socketToLobby.set(socket.id, lobbyCode);
     socket.join(lobbyCode);
 
+    // Track session
+    if (sessionId) {
+      this.sessions.set(sessionId, {
+        sessionId,
+        lobbyCode,
+        playerData: {
+          name: playerName,
+          color: '#f59e0b',
+          wasHost: true,
+          hostDisconnectTime: null
+        },
+        lastSeen: Date.now(),
+        previousSocketId: socket.id
+      });
+    }
+
     console.log(`Lobby created: ${lobbyCode} (${gameType})`);
 
     callback({ success: true, lobbyCode, lobby: this.getLobbyInfo(lobby) });
@@ -37,6 +59,7 @@ export class LobbyManager {
 
   joinLobby(socket, data, callback) {
     const { lobbyCode, playerName } = data;
+    const sessionId = socket.handshake.auth?.sessionId;
     const lobby = this.lobbies.get(lobbyCode);
 
     if (!lobby) {
@@ -59,6 +82,22 @@ export class LobbyManager {
     });
     this.socketToLobby.set(socket.id, lobbyCode);
     socket.join(lobbyCode);
+
+    // Track session
+    if (sessionId) {
+      this.sessions.set(sessionId, {
+        sessionId,
+        lobbyCode,
+        playerData: {
+          name: playerName,
+          color: randomColor,
+          wasHost: false,
+          hostDisconnectTime: null
+        },
+        lastSeen: Date.now(),
+        previousSocketId: socket.id
+      });
+    }
 
     console.log(`Player ${playerName} joined lobby ${lobbyCode}${isSpectator ? ' as spectator' : ''}`);
 
@@ -113,8 +152,113 @@ export class LobbyManager {
     this.broadcastLobbyUpdate(lobbyCode);
   }
 
-  handleDisconnect(socket) {
-    this.leaveLobby(socket);
+  handleDisconnect(socket, sessionId) {
+    const lobbyCode = this.socketToLobby.get(socket.id);
+    if (!lobbyCode) return;
+
+    const lobby = this.lobbies.get(lobbyCode);
+    if (!lobby) return;
+
+    const player = lobby.players.get(socket.id);
+    if (!player) return;
+
+    console.log(`Player ${player.name} disconnected from lobby ${lobbyCode}`);
+
+    // If player has a session, mark as disconnected with grace period
+    if (sessionId && this.sessions.has(sessionId)) {
+      const session = this.sessions.get(sessionId);
+
+      // Track if this player was host
+      const wasHost = lobby.host === socket.id;
+
+      // Store disconnect info for grace period
+      this.disconnectedPlayers.set(socket.id, {
+        lobbyCode,
+        sessionId,
+        disconnectTime: Date.now(),
+        wasHost,
+        playerData: { ...player }
+      });
+
+      // Update session
+      session.lastSeen = Date.now();
+      session.playerData.wasHost = wasHost;
+      if (wasHost) {
+        session.playerData.hostDisconnectTime = Date.now();
+      }
+
+      // Notify game instance about temporary disconnect
+      if (lobby.game && typeof lobby.game.playerDisconnected === 'function') {
+        lobby.game.playerDisconnected(socket.id);
+      }
+
+      // Remove lobby cursor
+      socket.broadcast.to(lobby.code).emit('lobby_cursor_remove', {
+        playerId: socket.id
+      });
+
+      // Set timeout to actually remove player after grace period (2 minutes)
+      setTimeout(() => {
+        const disconnectData = this.disconnectedPlayers.get(socket.id);
+        if (disconnectData) {
+          // Player didn't reconnect, remove them permanently
+          this.removeDisconnectedPlayer(socket.id);
+        }
+      }, 2 * 60 * 1000); // 2 minute grace period
+
+      // If was host, temporarily assign new host
+      if (wasHost && lobby.players.size > 1) {
+        const newHost = Array.from(lobby.players.keys()).find(id => id !== socket.id);
+        if (newHost) {
+          lobby.host = newHost;
+          lobby.players.get(newHost).isHost = true;
+          console.log(`Temporarily assigned ${lobby.players.get(newHost).name} as host`);
+        }
+      }
+
+      this.broadcastLobbyUpdate(lobbyCode);
+    } else {
+      // No session, immediately remove player
+      this.leaveLobby(socket);
+    }
+  }
+
+  removeDisconnectedPlayer(socketId) {
+    const disconnectData = this.disconnectedPlayers.get(socketId);
+    if (!disconnectData) return;
+
+    const { lobbyCode, sessionId } = disconnectData;
+    const lobby = this.lobbies.get(lobbyCode);
+
+    console.log(`Removing disconnected player ${socketId} from lobby ${lobbyCode} (grace period expired)`);
+
+    // Remove from disconnected tracking
+    this.disconnectedPlayers.delete(socketId);
+
+    // Remove session
+    if (sessionId) {
+      this.sessions.delete(sessionId);
+    }
+
+    if (!lobby) return;
+
+    // Notify game instance
+    if (lobby.game && typeof lobby.game.removePlayer === 'function') {
+      lobby.game.removePlayer(socketId);
+    }
+
+    // Remove player
+    lobby.players.delete(socketId);
+    this.socketToLobby.delete(socketId);
+
+    // If lobby is empty, delete it
+    if (lobby.players.size === 0) {
+      this.lobbies.delete(lobbyCode);
+      console.log(`Lobby ${lobbyCode} deleted (empty after grace period)`);
+      return;
+    }
+
+    this.broadcastLobbyUpdate(lobbyCode);
   }
 
   selectGamemode(socket, data) {
@@ -275,10 +419,136 @@ export class LobbyManager {
     // Update player color
     player.color = data.color;
 
+    // Update session if exists
+    const sessionId = socket.handshake.auth?.sessionId;
+    if (sessionId && this.sessions.has(sessionId)) {
+      this.sessions.get(sessionId).playerData.color = data.color;
+    }
+
     // Broadcast updated lobby info to all players
     this.broadcastLobbyUpdate(lobby.code);
 
     console.log(`Player ${player.name} changed color to ${data.color} in lobby ${lobby.code}`);
+  }
+
+  attemptReconnection(socket, sessionId) {
+    if (!sessionId || !this.sessions.has(sessionId)) {
+      console.log(`No valid session found for ${socket.id}`);
+      return;
+    }
+
+    const session = this.sessions.get(sessionId);
+    const lobby = this.lobbies.get(session.lobbyCode);
+
+    // Check if lobby still exists
+    if (!lobby) {
+      console.log(`Lobby ${session.lobbyCode} no longer exists, clearing session`);
+      this.sessions.delete(sessionId);
+      socket.emit('session_expired');
+      return;
+    }
+
+    // Check session expiration (30 minutes)
+    const sessionAge = Date.now() - session.lastSeen;
+    if (sessionAge > 30 * 60 * 1000) {
+      console.log(`Session expired for ${socket.id} (age: ${Math.round(sessionAge / 1000)}s)`);
+      this.sessions.delete(sessionId);
+      socket.emit('session_expired');
+      return;
+    }
+
+    const oldSocketId = session.previousSocketId;
+
+    console.log(`♻️ Reconnecting player with session ${sessionId.substring(0, 8)}`);
+    console.log(`   Old socket: ${oldSocketId}, New socket: ${socket.id}`);
+
+    // Update player in lobby with new socket ID
+    const playerData = session.playerData;
+    const wasHost = playerData.wasHost;
+
+    // Check if we should restore host status
+    let shouldRestoreHost = false;
+    if (wasHost && playerData.hostDisconnectTime) {
+      const disconnectDuration = Date.now() - playerData.hostDisconnectTime;
+      // Restore host if disconnected less than 2 minutes ago
+      if (disconnectDuration < 2 * 60 * 1000) {
+        shouldRestoreHost = true;
+        console.log(`   Restoring host status (disconnected for ${Math.round(disconnectDuration / 1000)}s)`);
+      }
+    }
+
+    // Remove old socket references
+    if (lobby.players.has(oldSocketId)) {
+      lobby.players.delete(oldSocketId);
+    }
+    this.socketToLobby.delete(oldSocketId);
+    this.disconnectedPlayers.delete(oldSocketId);
+
+    // Add player with new socket ID
+    lobby.players.set(socket.id, {
+      id: socket.id,
+      name: playerData.name,
+      color: playerData.color,
+      isHost: shouldRestoreHost,
+      isSpectator: false
+    });
+
+    this.socketToLobby.set(socket.id, session.lobbyCode);
+    socket.join(session.lobbyCode);
+
+    // Restore host if applicable
+    if (shouldRestoreHost) {
+      lobby.host = socket.id;
+    }
+
+    // Update session with new socket
+    session.previousSocketId = socket.id;
+    session.lastSeen = Date.now();
+    if (shouldRestoreHost) {
+      session.playerData.hostDisconnectTime = null;
+    }
+
+    // Notify game instance to restore player state
+    if (lobby.game) {
+      if (typeof lobby.game.restorePlayer === 'function') {
+        lobby.game.restorePlayer(oldSocketId, socket.id);
+      }
+    }
+
+    // Send reconnection confirmation to client
+    socket.emit('session_restored', {
+      lobby: this.getLobbyInfo(lobby),
+      gameType: lobby.gameType,
+      gameState: lobby.state,
+      wasHost: shouldRestoreHost,
+      message: `Welcome back, ${playerData.name}!`
+    });
+
+    // Broadcast updated lobby to all players
+    this.broadcastLobbyUpdate(session.lobbyCode);
+
+    console.log(`✅ Successfully reconnected ${playerData.name} to lobby ${session.lobbyCode}`);
+  }
+
+  cleanupExpiredSessions() {
+    const now = Date.now();
+    const expiredSessions = [];
+
+    for (const [sessionId, session] of this.sessions.entries()) {
+      const age = now - session.lastSeen;
+      if (age > 30 * 60 * 1000) { // 30 minutes
+        expiredSessions.push(sessionId);
+      }
+    }
+
+    for (const sessionId of expiredSessions) {
+      console.log(`🧹 Cleaning up expired session: ${sessionId.substring(0, 8)}`);
+      this.sessions.delete(sessionId);
+    }
+
+    if (expiredSessions.length > 0) {
+      console.log(`Cleaned up ${expiredSessions.length} expired sessions`);
+    }
   }
 
   // Helper methods

@@ -10,6 +10,7 @@ function AppContent() {
   const { socket } = useSocket();
   const [screen, setScreen] = useState('home'); // home, lobby, imposter, connections
   const [lobbyData, setLobbyData] = useState(null);
+  const [reconnecting, setReconnecting] = useState(false);
 
   // Enable custom cursor on mount
   useEffect(() => {
@@ -52,8 +53,46 @@ function AppContent() {
     };
   }, [socket, screen]);
 
+  // Listen for session restoration
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('session_restored', (data) => {
+      console.log('♻️ Session restored:', data);
+      setReconnecting(true);
+
+      // Restore lobby data
+      setLobbyData(data.lobby);
+
+      // Restore appropriate screen
+      if (data.gameState === 'playing' && data.gameType) {
+        setScreen(data.gameType);
+      } else {
+        setScreen('lobby');
+      }
+
+      // Hide reconnecting overlay after a moment
+      setTimeout(() => {
+        setReconnecting(false);
+      }, 1500);
+    });
+
+    return () => {
+      socket.off('session_restored');
+    };
+  }, [socket]);
+
   return (
     <div className="container">
+      {reconnecting && (
+        <div className="reconnecting-overlay">
+          <div className="reconnecting-message">
+            <div className="reconnecting-spinner"></div>
+            <p>Reconnecting...</p>
+          </div>
+        </div>
+      )}
+
       {screen === 'home' && <Home onJoinLobby={goToLobby} />}
       {screen === 'lobby' && (
         <Lobby lobbyData={lobbyData} onStartGame={startGame} onLeave={goHome} />

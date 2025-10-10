@@ -31,7 +31,13 @@ app.get('/health', (req, res) => {
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log(`Client connected: ${socket.id}`);
+  const sessionId = socket.handshake.auth?.sessionId;
+  console.log(`Client connected: ${socket.id}${sessionId ? ' (session: ' + sessionId.substring(0, 8) + ')' : ''}`);
+
+  // Attempt reconnection if session exists
+  if (sessionId) {
+    lobbyManager.attemptReconnection(socket, sessionId);
+  }
 
   // Lobby events
   socket.on('create_lobby', (data, callback) => {
@@ -104,8 +110,9 @@ io.on('connection', (socket) => {
 
   // Disconnection
   socket.on('disconnect', () => {
-    console.log(`Client disconnected: ${socket.id}`);
-    lobbyManager.handleDisconnect(socket);
+    const sessionId = socket.handshake.auth?.sessionId;
+    console.log(`Client disconnected: ${socket.id}${sessionId ? ' (session: ' + sessionId.substring(0, 8) + ')' : ''}`);
+    lobbyManager.handleDisconnect(socket, sessionId);
   });
 });
 

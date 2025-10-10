@@ -94,3 +94,59 @@ input:focus {
   text-align: center;
   opacity: 0.9;
 }
+
+/* Reconnection Overlay */
+.reconnecting-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.reconnecting-message {
+  background: rgba(47, 48, 97, 0.95);
+  padding: 40px 60px;
+  border-radius: 16px;
+  text-align: center;
+  border: 2px solid #8A8BDF;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.reconnecting-message p {
+  font-size: 24px;
+  font-weight: 600;
+  color: #E7CFCD;
+  margin-top: 20px;
+}
+
+.reconnecting-spinner {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto;
+  border: 4px solid rgba(138, 139, 223, 0.3);
+  border-top-color: #8A8BDF;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

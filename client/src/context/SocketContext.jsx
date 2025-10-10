@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
+import { getSessionId } from '../utils/sessionManager';
 
 const SocketContext = createContext();
 
@@ -17,11 +18,15 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
+    const sessionId = getSessionId();
     console.log('Attempting to connect to:', serverUrl);
 
     const newSocket = io(serverUrl, {
       autoConnect: true,
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      auth: {
+        sessionId
+      }
     });
 
     newSocket.on('connect', () => {
@@ -38,6 +43,14 @@ export const SocketProvider = ({ children }) => {
       console.error('❌ Connection error:', error.message);
       console.error('Server URL:', serverUrl);
       setConnected(false);
+    });
+
+    newSocket.on('session_restored', (data) => {
+      console.log('♻️ Session restored:', data);
+    });
+
+    newSocket.on('session_expired', () => {
+      console.log('⏰ Session expired - creating new session');
     });
 
     setSocket(newSocket);

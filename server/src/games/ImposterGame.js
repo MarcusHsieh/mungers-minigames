@@ -400,4 +400,112 @@ export class ImposterGame {
     // Notify other players that cursor is gone
     this.io.to(this.lobbyCode).emit('imposter_cursor_remove', { playerId });
   }
+
+  restorePlayer(oldSocketId, newSocketId) {
+    console.log(`[ImposterGame] Restoring player: ${oldSocketId} -> ${newSocketId}`);
+
+    // Update player references in game state
+    if (this.imposters.has(oldSocketId)) {
+      this.imposters.delete(oldSocketId);
+      this.imposters.add(newSocketId);
+      console.log('  - Restored as imposter');
+    }
+
+    if (this.innocents.has(oldSocketId)) {
+      this.innocents.delete(oldSocketId);
+      this.innocents.add(newSocketId);
+      console.log('  - Restored as innocent');
+    }
+
+    // Update eliminated players
+    if (this.eliminatedPlayers.has(oldSocketId)) {
+      this.eliminatedPlayers.delete(oldSocketId);
+      this.eliminatedPlayers.add(newSocketId);
+      console.log('  - Restored eliminated status');
+    }
+
+    // Update submitted words
+    if (this.submittedWords.has(oldSocketId)) {
+      const word = this.submittedWords.get(oldSocketId);
+      this.submittedWords.delete(oldSocketId);
+      this.submittedWords.set(newSocketId, word);
+      console.log('  - Restored submitted word');
+    }
+
+    // Update votes
+    if (this.votes.has(oldSocketId)) {
+      const vote = this.votes.get(oldSocketId);
+      this.votes.delete(oldSocketId);
+      this.votes.set(newSocketId, vote);
+      console.log('  - Restored vote');
+    }
+
+    // Update turn order if this player is in it
+    const turnIndex = this.turnOrder.indexOf(oldSocketId);
+    if (turnIndex !== -1) {
+      this.turnOrder[turnIndex] = newSocketId;
+      console.log('  - Updated turn order');
+    }
+
+    // Resend role info to reconnected player
+    const isImposter = this.imposters.has(newSocketId);
+    const isEliminated = this.eliminatedPlayers.has(newSocketId);
+
+    this.io.to(newSocketId).emit('game_start', {
+      role: isImposter ? 'imposter' : 'innocent',
+      word: isImposter ? (this.settings.giveHintWord ? this.hintWord : null) : this.targetWord,
+      imposterCount: this.settings.imposterCount,
+      isSpectator: false,
+      players: Array.from(this.lobby.players.values())
+    });
+
+    // Resend current round info
+    if (this.currentRound > 0) {
+      this.io.to(newSocketId).emit('round_start', {
+        round: this.currentRound,
+        totalRounds: this.settings.maxRounds
+      });
+    }
+
+    // Resend current phase info
+    if (this.phase === 'turn' && this.currentTurnIndex < this.turnOrder.length) {
+      const currentPlayerId = this.turnOrder[this.currentTurnIndex];
+      const currentPlayer = this.lobby.players.get(currentPlayerId);
+
+      this.io.to(newSocketId).emit('turn_start', {
+        playerId: currentPlayerId,
+        playerName: currentPlayer?.name || 'Unknown',
+        timeLimit: this.settings.turnTimeLimit
+      });
+    }
+
+    // Resend submitted words
+    if (this.submittedWords.size > 0) {
+      const wordsList = Array.from(this.submittedWords.entries()).map(([id, word]) => ({
+        playerId: id,
+        playerName: this.lobby.players.get(id)?.name || 'Unknown',
+        word
+      }));
+
+      for (const wordData of wordsList) {
+        this.io.to(newSocketId).emit('word_submitted', wordData);
+      }
+    }
+
+    // Resend voting phase if active
+    if (this.phase === 'voting') {
+      const wordsList = Array.from(this.submittedWords.entries()).map(([id, word]) => ({
+        playerId: id,
+        playerName: this.lobby.players.get(id)?.name || 'Unknown',
+        word
+      }));
+
+      this.io.to(newSocketId).emit('voting_start', {
+        words: wordsList,
+        timeLimit: this.settings.votingTimeLimit
+      });
+    }
+
+    console.log(`[ImposterGame] Player state fully restored`);
+  }
 }
