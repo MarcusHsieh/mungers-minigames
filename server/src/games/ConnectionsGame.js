@@ -379,8 +379,18 @@ export class ConnectionsGame {
     this.io.to(this.lobbyCode).emit('cursor_remove', { playerId });
   }
 
+  playerDisconnected(playerId) {
+    // Called when player temporarily disconnects (before grace period expires)
+    // Remove their cursor from other players' views, but keep their selections/state
+    console.log(`[ConnectionsGame] Player ${playerId} disconnected - removing cursor`);
+    this.io.to(this.lobbyCode).emit('cursor_remove', { playerId });
+  }
+
   restorePlayer(oldSocketId, newSocketId) {
     console.log(`[ConnectionsGame] Restoring player: ${oldSocketId} -> ${newSocketId}`);
+
+    // Remove old cursor immediately to prevent duplicate cursors
+    this.io.to(this.lobbyCode).emit('cursor_remove', { playerId: oldSocketId });
 
     // Restore selections
     if (this.playerSelections.has(oldSocketId)) {

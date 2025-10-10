@@ -401,8 +401,18 @@ export class ImposterGame {
     this.io.to(this.lobbyCode).emit('imposter_cursor_remove', { playerId });
   }
 
+  playerDisconnected(playerId) {
+    // Called when player temporarily disconnects (before grace period expires)
+    // Remove their cursor from other players' views
+    console.log(`[ImposterGame] Player ${playerId} disconnected - removing cursor`);
+    this.io.to(this.lobbyCode).emit('imposter_cursor_remove', { playerId });
+  }
+
   restorePlayer(oldSocketId, newSocketId) {
     console.log(`[ImposterGame] Restoring player: ${oldSocketId} -> ${newSocketId}`);
+
+    // Remove old cursor immediately to prevent duplicate cursors
+    this.io.to(this.lobbyCode).emit('imposter_cursor_remove', { playerId: oldSocketId });
 
     // Update player references in game state
     if (this.imposters.has(oldSocketId)) {
