@@ -31,6 +31,7 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on('connect', () => {
       console.log('✅ Connected to server:', serverUrl);
+      console.log('Socket ID:', newSocket.id);
       setConnected(true);
     });
 

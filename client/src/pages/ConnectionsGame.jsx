@@ -13,6 +13,8 @@ function ConnectionsGame({ onEnd, lobbyData }) {
   const { socket } = useSocket();
   const boardRef = useRef(null);
   const [words, setWords] = useState([]);
+
+  console.log('[ConnectionsGame] Component mounted/rendered, socket:', socket ? 'connected' : 'null', 'lobbyData:', lobbyData);
   const [solvedCategories, setSolvedCategories] = useState([]);
   const [mySelections, setMySelections] = useState(new Set());
   const [otherSelections, setOtherSelections] = useState(new Map()); // playerId -> Set of words
@@ -59,6 +61,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
     });
 
     socket.on('connections_start', (data) => {
+      console.log('[ConnectionsGame] Received connections_start:', data);
       setWords(data.words);
       setMaxMistakes(data.maxMistakes);
       setMaxHints(data.maxHints || 2);

@@ -24,6 +24,7 @@ function AppContent() {
   };
 
   const startGame = (gameType) => {
+    console.log('[App] Starting game, transitioning to screen:', gameType);
     setScreen(gameType);
   };
 

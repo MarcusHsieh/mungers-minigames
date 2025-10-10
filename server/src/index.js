@@ -62,6 +62,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('start_game', (data) => {
+    console.log(`[start_game] Received from ${socket.id}:`, data);
     lobbyManager.startGame(socket, data);
   });
 

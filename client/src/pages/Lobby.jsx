@@ -62,11 +62,13 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
 
     // Listen for lobby updates
     socket.on('lobby_update', (updatedLobby) => {
+      console.log('[Lobby] Received lobby_update:', updatedLobby);
       setLobby(updatedLobby);
       setIsHost(socket.id === updatedLobby.host);
 
       // Transition to game screen when lobby state changes to 'playing'
       if (updatedLobby.state === 'playing' && lobby?.state !== 'playing') {
+        console.log('[Lobby] Transitioning to game:', updatedLobby.gameType);
         onStartGame(updatedLobby.gameType);
       }
     });
@@ -142,6 +144,7 @@ function Lobby({ lobbyData, onStartGame, onLeave }) {
   }, [socket]);
 
   const handleStartGame = () => {
+    console.log('[Lobby] Starting game with settings:', settings);
     socket.emit('start_game', { settings });
   };
 
