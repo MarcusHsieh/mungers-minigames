@@ -447,65 +447,68 @@ export class ImposterGame {
       console.log('  - Updated turn order');
     }
 
-    // Resend role info to reconnected player
-    const isImposter = this.imposters.has(newSocketId);
-    const isEliminated = this.eliminatedPlayers.has(newSocketId);
+    // Wait for client to mount component and set up listeners before sending state
+    setTimeout(() => {
+      // Resend role info to reconnected player
+      const isImposter = this.imposters.has(newSocketId);
+      const isEliminated = this.eliminatedPlayers.has(newSocketId);
 
-    this.io.to(newSocketId).emit('game_start', {
-      role: isImposter ? 'imposter' : 'innocent',
-      word: isImposter ? (this.settings.giveHintWord ? this.hintWord : null) : this.targetWord,
-      imposterCount: this.settings.imposterCount,
-      isSpectator: false,
-      players: Array.from(this.lobby.players.values())
-    });
-
-    // Resend current round info
-    if (this.currentRound > 0) {
-      this.io.to(newSocketId).emit('round_start', {
-        round: this.currentRound,
-        totalRounds: this.settings.maxRounds
+      this.io.to(newSocketId).emit('game_start', {
+        role: isImposter ? 'imposter' : 'innocent',
+        word: isImposter ? (this.settings.giveHintWord ? this.hintWord : null) : this.targetWord,
+        imposterCount: this.settings.imposterCount,
+        isSpectator: false,
+        players: Array.from(this.lobby.players.values())
       });
-    }
 
-    // Resend current phase info
-    if (this.phase === 'turn' && this.currentTurnIndex < this.turnOrder.length) {
-      const currentPlayerId = this.turnOrder[this.currentTurnIndex];
-      const currentPlayer = this.lobby.players.get(currentPlayerId);
-
-      this.io.to(newSocketId).emit('turn_start', {
-        playerId: currentPlayerId,
-        playerName: currentPlayer?.name || 'Unknown',
-        timeLimit: this.settings.turnTimeLimit
-      });
-    }
-
-    // Resend submitted words
-    if (this.submittedWords.size > 0) {
-      const wordsList = Array.from(this.submittedWords.entries()).map(([id, word]) => ({
-        playerId: id,
-        playerName: this.lobby.players.get(id)?.name || 'Unknown',
-        word
-      }));
-
-      for (const wordData of wordsList) {
-        this.io.to(newSocketId).emit('word_submitted', wordData);
+      // Resend current round info
+      if (this.currentRound > 0) {
+        this.io.to(newSocketId).emit('round_start', {
+          round: this.currentRound,
+          totalRounds: this.settings.maxRounds
+        });
       }
-    }
 
-    // Resend voting phase if active
-    if (this.phase === 'voting') {
-      const wordsList = Array.from(this.submittedWords.entries()).map(([id, word]) => ({
-        playerId: id,
-        playerName: this.lobby.players.get(id)?.name || 'Unknown',
-        word
-      }));
+      // Resend current phase info
+      if (this.phase === 'turn' && this.currentTurnIndex < this.turnOrder.length) {
+        const currentPlayerId = this.turnOrder[this.currentTurnIndex];
+        const currentPlayer = this.lobby.players.get(currentPlayerId);
 
-      this.io.to(newSocketId).emit('voting_start', {
-        words: wordsList,
-        timeLimit: this.settings.votingTimeLimit
-      });
-    }
+        this.io.to(newSocketId).emit('turn_start', {
+          playerId: currentPlayerId,
+          playerName: currentPlayer?.name || 'Unknown',
+          timeLimit: this.settings.turnTimeLimit
+        });
+      }
 
-    console.log(`[ImposterGame] Player state fully restored`);
+      // Resend submitted words
+      if (this.submittedWords.size > 0) {
+        const wordsList = Array.from(this.submittedWords.entries()).map(([id, word]) => ({
+          playerId: id,
+          playerName: this.lobby.players.get(id)?.name || 'Unknown',
+          word
+        }));
+
+        for (const wordData of wordsList) {
+          this.io.to(newSocketId).emit('word_submitted', wordData);
+        }
+      }
+
+      // Resend voting phase if active
+      if (this.phase === 'voting') {
+        const wordsList = Array.from(this.submittedWords.entries()).map(([id, word]) => ({
+          playerId: id,
+          playerName: this.lobby.players.get(id)?.name || 'Unknown',
+          word
+        }));
+
+        this.io.to(newSocketId).emit('voting_start', {
+          words: wordsList,
+          timeLimit: this.settings.votingTimeLimit
+        });
+      }
+
+      console.log(`[ImposterGame] Player state fully restored`);
+    }, 500); // 500ms delay to ensure client is ready
   }
 }

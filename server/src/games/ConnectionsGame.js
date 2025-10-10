@@ -405,52 +405,55 @@ export class ConnectionsGame {
       this.playerCursors.set(newSocketId, cursor);
     }
 
-    // Resend game state to reconnected player
-    const player = this.lobby.players.get(newSocketId);
+    // Wait for client to mount component and set up listeners before sending state
+    setTimeout(() => {
+      // Resend game state to reconnected player
+      const player = this.lobby.players.get(newSocketId);
 
-    // Send game start event
-    this.io.to(newSocketId).emit('connections_start', {
-      words: this.words,
-      maxMistakes: this.maxMistakes,
-      maxHints: this.maxHints,
-      players: Array.from(this.lobby.players.values())
-    });
-
-    // Send current mistake count
-    if (this.mistakeCount > 0) {
-      this.io.to(newSocketId).emit('mistake_made', {
-        playerName: 'System',
-        mistakeCount: this.mistakeCount,
-        maxMistakes: this.maxMistakes
+      // Send game start event
+      this.io.to(newSocketId).emit('connections_start', {
+        words: this.words,
+        maxMistakes: this.maxMistakes,
+        maxHints: this.maxHints,
+        players: Array.from(this.lobby.players.values())
       });
-    }
 
-    // Send solved categories
-    for (const category of this.solvedCategories) {
-      this.io.to(newSocketId).emit('category_solved', {
-        category,
-        solvedBy: 'Previously solved'
+      // Send current mistake count
+      if (this.mistakeCount > 0) {
+        this.io.to(newSocketId).emit('mistake_made', {
+          playerName: 'System',
+          mistakeCount: this.mistakeCount,
+          maxMistakes: this.maxMistakes
+        });
+      }
+
+      // Send solved categories
+      for (const category of this.solvedCategories) {
+        this.io.to(newSocketId).emit('category_solved', {
+          category,
+          solvedBy: 'Previously solved'
+        });
+      }
+
+      // Send revealed hints
+      if (this.hintsUsed > 0 && this.revealedHints.length > 0) {
+        this.io.to(newSocketId).emit('sync_hints', {
+          hintsUsed: this.hintsUsed,
+          revealedHints: this.revealedHints
+        });
+      }
+
+      // Send current scores
+      this.io.to(newSocketId).emit('score_update', {
+        scores: Array.from(this.playerScores.entries()).map(([id, score]) => ({
+          playerId: id,
+          playerName: this.lobby.players.get(id)?.name || 'Unknown',
+          score
+        }))
       });
-    }
 
-    // Send revealed hints
-    if (this.hintsUsed > 0 && this.revealedHints.length > 0) {
-      this.io.to(newSocketId).emit('sync_hints', {
-        hintsUsed: this.hintsUsed,
-        revealedHints: this.revealedHints
-      });
-    }
-
-    // Send current scores
-    this.io.to(newSocketId).emit('score_update', {
-      scores: Array.from(this.playerScores.entries()).map(([id, score]) => ({
-        playerId: id,
-        playerName: this.lobby.players.get(id)?.name || 'Unknown',
-        score
-      }))
-    });
-
-    console.log(`[ConnectionsGame] Player state fully restored`);
+      console.log(`[ConnectionsGame] Player state fully restored`);
+    }, 500); // 500ms delay to ensure client is ready
   }
 
   // Allow restarting the game with a new puzzle
