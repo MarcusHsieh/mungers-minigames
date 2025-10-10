@@ -379,6 +379,23 @@ export class ConnectionsGame {
     this.io.to(this.lobbyCode).emit('cursor_remove', { playerId });
   }
 
+  handlePlayerLeave(playerId) {
+    console.log(`[ConnectionsGame] Player ${playerId} is leaving the game`);
+
+    // Remove from game state
+    this.playerCursors.delete(playerId);
+    this.playerSelections.delete(playerId);
+    this.playerScores.delete(playerId);
+
+    // Notify other players cursor is gone
+    this.io.to(this.lobbyCode).emit('cursor_remove', { playerId });
+
+    // Connections is collaborative, so game can continue with remaining players
+    // No minimum player count required
+    const remainingPlayers = Array.from(this.lobby.players.values()).length;
+    console.log(`  - Game continues with ${remainingPlayers} player(s)`);
+  }
+
   playerDisconnected(playerId) {
     // Called when player temporarily disconnects (before grace period expires)
     // Remove their cursor from other players' views, but keep their selections/state

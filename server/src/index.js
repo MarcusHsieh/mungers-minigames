@@ -108,6 +108,10 @@ io.on('connection', (socket) => {
     lobbyManager.updatePlayerColor(socket, data);
   });
 
+  socket.on('leave_game', () => {
+    lobbyManager.leaveGame(socket);
+  });
+
   // Disconnection
   socket.on('disconnect', () => {
     const sessionId = socket.handshake.auth?.sessionId;

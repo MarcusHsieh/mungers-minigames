@@ -496,6 +496,76 @@
   margin-bottom: 32px;
 }
 
+.leave-button {
+  background: rgba(239, 68, 68, 0.3) !important;
+  color: #ef4444 !important;
+  border: 2px solid #ef4444 !important;
+}
+
+.leave-button:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.5) !important;
+  transform: translateY(-2px);
+}
+
+.confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+.confirm-dialog {
+  background: rgba(47, 48, 97, 0.95);
+  padding: 32px;
+  border-radius: 16px;
+  text-align: center;
+  border: 2px solid #8A8BDF;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  max-width: 400px;
+  width: 90%;
+}
+
+.confirm-dialog h2 {
+  font-size: 24px;
+  margin-bottom: 16px;
+  color: #E7CFCD;
+}
+
+.confirm-dialog p {
+  font-size: 16px;
+  margin-bottom: 24px;
+  color: #E7CFCD;
+  opacity: 0.9;
+  line-height: 1.5;
+}
+
+.confirm-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.confirm-buttons button {
+  flex: 1;
+  padding: 12px 24px;
+  font-size: 16px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @media (max-width: 768px) {
   .connections-game.playing {
     grid-template-columns: 1fr;

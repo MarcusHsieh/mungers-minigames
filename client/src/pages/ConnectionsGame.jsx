@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { updateCursorColor } from '../utils/cursor';
+import { clearSession } from '../utils/sessionManager';
 import './ConnectionsGame.css';
 
 const COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
@@ -29,6 +30,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
   const [playerScores, setPlayerScores] = useState(new Map()); // playerId -> score
   const [finalScores, setFinalScores] = useState([]);
   const [eventLog, setEventLog] = useState([]);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   // Initialize players from lobby data
   useEffect(() => {
@@ -164,6 +166,11 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       }
     });
 
+    socket.on('player_left_game', (data) => {
+      showMessage(`${data.playerName} left the game`, 'error');
+      addEventLog(`${data.playerName} left the game`, 'error');
+    });
+
     return () => {
       socket.off('lobby_update');
       socket.off('connections_start');
@@ -177,6 +184,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
       socket.off('score_update');
       socket.off('connections_end');
       socket.off('words_shuffled');
+      socket.off('player_left_game');
     };
   }, [socket]);
 
@@ -262,6 +270,12 @@ function ConnectionsGame({ onEnd, lobbyData }) {
   const useHint = () => {
     if (hintsUsed >= maxHints) return;
     socket.emit('use_hint');
+  };
+
+  const handleLeaveGame = () => {
+    socket.emit('leave_game');
+    clearSession();
+    onEnd();
   };
 
   const getPlayerIndex = (playerId) => {
@@ -355,6 +369,23 @@ function ConnectionsGame({ onEnd, lobbyData }) {
 
   return (
     <div className={`card connections-game ${gameStatus === 'playing' ? 'playing' : ''}`}>
+      {showLeaveConfirm && (
+        <div className="confirm-overlay">
+          <div className="confirm-dialog">
+            <h2>Leave Game?</h2>
+            <p>Are you sure you want to leave? Your progress will be lost and other players will be notified.</p>
+            <div className="confirm-buttons">
+              <button onClick={() => setShowLeaveConfirm(false)} className="secondary">
+                Cancel
+              </button>
+              <button onClick={handleLeaveGame} className="leave-button">
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="game-header">
         <h1 className="title">🧩 Connections</h1>
         <div className="game-stats">
@@ -501,6 +532,9 @@ function ConnectionsGame({ onEnd, lobbyData }) {
         </button>
         <button onClick={submitGroup} disabled={mySelections.size !== 4}>
           Submit
+        </button>
+        <button onClick={() => setShowLeaveConfirm(true)} className="leave-button">
+          Leave Game
         </button>
       </div>
 

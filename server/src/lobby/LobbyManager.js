@@ -431,6 +431,42 @@ export class LobbyManager {
     console.log(`Player ${player.name} changed color to ${data.color} in lobby ${lobby.code}`);
   }
 
+  leaveGame(socket) {
+    const lobbyCode = this.socketToLobby.get(socket.id);
+    if (!lobbyCode) return;
+
+    const lobby = this.lobbies.get(lobbyCode);
+    if (!lobby) return;
+
+    const player = lobby.players.get(socket.id);
+    if (!player) return;
+
+    console.log(`Player ${player.name} is leaving game in lobby ${lobbyCode}`);
+
+    // Clear session immediately (no reconnection allowed after explicit leave)
+    const sessionId = socket.handshake.auth?.sessionId;
+    if (sessionId) {
+      this.sessions.delete(sessionId);
+      this.disconnectedPlayers.delete(socket.id);
+    }
+
+    // Notify game instance to handle player leaving
+    if (lobby.game && lobby.state === 'playing') {
+      if (typeof lobby.game.handlePlayerLeave === 'function') {
+        lobby.game.handlePlayerLeave(socket.id);
+      }
+    }
+
+    // Broadcast to all players that this player left
+    this.io.to(lobbyCode).emit('player_left_game', {
+      playerId: socket.id,
+      playerName: player.name
+    });
+
+    // Call leaveLobby to do standard cleanup
+    this.leaveLobby(socket);
+  }
+
   attemptReconnection(socket, sessionId) {
     if (!sessionId || !this.sessions.has(sessionId)) {
       console.log(`No valid session found for ${socket.id}`);

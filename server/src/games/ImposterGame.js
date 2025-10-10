@@ -401,6 +401,83 @@ export class ImposterGame {
     this.io.to(this.lobbyCode).emit('imposter_cursor_remove', { playerId });
   }
 
+  handlePlayerLeave(playerId) {
+    console.log(`[ImposterGame] Player ${playerId} is leaving the game`);
+
+    const player = this.lobby.players.get(playerId);
+    const wasImposter = this.imposters.has(playerId);
+    const wasInnocent = this.innocents.has(playerId);
+
+    // Remove from game state
+    this.imposters.delete(playerId);
+    this.innocents.delete(playerId);
+    this.eliminatedPlayers.delete(playerId);
+    this.submittedWords.delete(playerId);
+    this.votes.delete(playerId);
+
+    // Remove from turn order
+    const turnIndex = this.turnOrder.indexOf(playerId);
+    if (turnIndex !== -1) {
+      this.turnOrder.splice(turnIndex, 1);
+
+      // If it was this player's turn, adjust current turn index
+      if (this.phase === 'turn' && turnIndex === this.currentTurnIndex) {
+        console.log('  - Player left during their turn, skipping to next');
+        clearTimeout(this.turnTimer);
+        // Don't increment currentTurnIndex since we removed the current player
+        // Just start next turn immediately
+        setTimeout(() => this.startNextTurn(), 500);
+      } else if (turnIndex < this.currentTurnIndex) {
+        // Player before current turn left, adjust index
+        this.currentTurnIndex--;
+      }
+    }
+
+    // During voting, check if all remaining players have voted
+    if (this.phase === 'voting') {
+      const activePlayers = this.turnOrder.filter(id => !this.eliminatedPlayers.has(id));
+      if (this.votes.size >= activePlayers.length) {
+        console.log('  - All remaining players voted, ending voting early');
+        clearTimeout(this.votingTimer);
+        this.endVoting();
+      }
+    }
+
+    // Check game viability - need at least 3 active non-spectator players
+    const activePlayers = Array.from(this.lobby.players.values())
+      .filter(p => !p.isSpectator && !this.eliminatedPlayers.has(p.id));
+
+    if (activePlayers.length < 3) {
+      console.log('  - Not enough players to continue, ending game');
+      this.endGame('draw');
+      return;
+    }
+
+    // Check win conditions
+    const activeImposters = Array.from(this.imposters).filter(id => !this.eliminatedPlayers.has(id));
+    const activeInnocents = Array.from(this.innocents).filter(id => !this.eliminatedPlayers.has(id));
+
+    if (activeImposters.length === 0) {
+      console.log('  - All imposters left, innocents win');
+      this.endGame('innocents');
+      return;
+    }
+
+    if (activeInnocents.length === 0) {
+      console.log('  - All innocents left, imposters win');
+      this.endGame('imposters');
+      return;
+    }
+
+    if (activeImposters.length >= activeInnocents.length) {
+      console.log('  - Imposters now outnumber innocents, imposters win');
+      this.endGame('imposters');
+      return;
+    }
+
+    console.log(`  - Game continues with ${activeImposters.length} imposters and ${activeInnocents.length} innocents`);
+  }
+
   playerDisconnected(playerId) {
     // Called when player temporarily disconnects (before grace period expires)
     // Remove their cursor from other players' views

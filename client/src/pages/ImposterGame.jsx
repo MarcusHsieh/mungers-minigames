@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { updateCursorColor } from '../utils/cursor';
+import { clearSession } from '../utils/sessionManager';
 import './ImposterGame.css';
 
 function ImposterGame({ onEnd, lobbyData }) {
@@ -25,6 +26,7 @@ function ImposterGame({ onEnd, lobbyData }) {
   const [cursors, setCursors] = useState(new Map());
   const [players, setPlayers] = useState([]);
   const [eventLog, setEventLog] = useState([]);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   // Initialize players from lobby data
   useEffect(() => {
@@ -158,6 +160,10 @@ function ImposterGame({ onEnd, lobbyData }) {
       });
     });
 
+    socket.on('player_left_game', (data) => {
+      addEventLog(`${data.playerName} left the game`, 'error');
+    });
+
     return () => {
       socket.off('lobby_update');
       socket.off('game_start');
@@ -169,6 +175,7 @@ function ImposterGame({ onEnd, lobbyData }) {
       socket.off('game_end');
       socket.off('imposter_cursor_update');
       socket.off('imposter_cursor_remove');
+      socket.off('player_left_game');
     };
   }, [socket]);
 
@@ -228,6 +235,12 @@ function ImposterGame({ onEnd, lobbyData }) {
     socket.emit('cast_vote', { targetId });
   };
 
+  const handleLeaveGame = () => {
+    socket.emit('leave_game');
+    clearSession();
+    onEnd();
+  };
+
   const isMyTurn = gameState.currentPlayerId && socket.id === gameState.currentPlayerId;
 
   if (gameState.phase === 'gameEnd' && gameEndInfo) {
@@ -270,6 +283,23 @@ function ImposterGame({ onEnd, lobbyData }) {
       className="card imposter-game"
       ref={gameAreaRef}
     >
+      {showLeaveConfirm && (
+        <div className="confirm-overlay">
+          <div className="confirm-dialog">
+            <h2>Leave Game?</h2>
+            <p>Are you sure you want to leave? Your progress will be lost and other players will be notified.</p>
+            <div className="confirm-buttons">
+              <button onClick={() => setShowLeaveConfirm(false)} className="secondary">
+                Cancel
+              </button>
+              <button onClick={handleLeaveGame} className="leave-button">
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Render other players' cursors */}
       {Array.from(cursors.entries()).map(([playerId, cursor]) => (
         <div
@@ -443,6 +473,12 @@ function ImposterGame({ onEnd, lobbyData }) {
           </div>
         </div>
       )}
+
+      <div className="game-controls">
+        <button onClick={() => setShowLeaveConfirm(true)} className="leave-button">
+          Leave Game
+        </button>
+      </div>
     </div>
   );
 }
