@@ -46,7 +46,7 @@ function Dropdown({ value, options, onChange, label }) {
   const selectedOption = options.find(opt => opt.value === value);
 
   return (
-    <div className="custom-dropdown" ref={dropdownRef}>
+    <div className={`custom-dropdown ${isOpen ? 'dropdown-open' : ''}`} ref={dropdownRef}>
       <button
         type="button"
         className={`dropdown-toggle ${isOpen ? 'open' : ''} ${openUpward ? 'open-upward' : ''}`}
