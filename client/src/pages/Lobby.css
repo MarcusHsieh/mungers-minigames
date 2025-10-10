@@ -235,6 +235,9 @@
 /* Ensure custom dropdown fits in settings layout */
 .setting .custom-dropdown {
   flex-shrink: 0;
+  max-width: 200px;
+  width: auto;
+  min-width: 150px;
 }
 
 .setting.checkbox label {
