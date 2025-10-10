@@ -9,7 +9,7 @@ const DIFFICULTY_NAMES = ['Easy', 'Medium', 'Hard', 'Tricky'];
 
 const PLAYER_COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#ec4899', '#14b8a6', '#f97316'];
 
-function ConnectionsGame({ onEnd, lobbyData }) {
+function ConnectionsGame({ onEnd, onLeave, lobbyData }) {
   const { socket } = useSocket();
   const boardRef = useRef(null);
   const [words, setWords] = useState([]);
@@ -278,7 +278,7 @@ function ConnectionsGame({ onEnd, lobbyData }) {
   const handleLeaveGame = () => {
     socket.emit('leave_game');
     clearSession();
-    onEnd();
+    onLeave();
   };
 
   const getPlayerIndex = (playerId) => {

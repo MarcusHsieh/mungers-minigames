@@ -4,7 +4,7 @@ import { updateCursorColor } from '../utils/cursor';
 import { clearSession } from '../utils/sessionManager';
 import './ImposterGame.css';
 
-function ImposterGame({ onEnd, lobbyData }) {
+function ImposterGame({ onEnd, onLeave, lobbyData }) {
   const { socket } = useSocket();
   const gameAreaRef = useRef(null);
   const [gameState, setGameState] = useState({
@@ -238,7 +238,7 @@ function ImposterGame({ onEnd, lobbyData }) {
   const handleLeaveGame = () => {
     socket.emit('leave_game');
     clearSession();
-    onEnd();
+    onLeave();
   };
 
   const isMyTurn = gameState.currentPlayerId && socket.id === gameState.currentPlayerId;
